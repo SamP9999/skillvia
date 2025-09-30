@@ -1,4 +1,4 @@
-package com.skillvia.app
+package com.skillvia.app.ui.main
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
