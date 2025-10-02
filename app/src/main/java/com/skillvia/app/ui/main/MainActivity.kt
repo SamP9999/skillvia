@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             SkillviaTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "Android",
+                        name = "Skillvia",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -42,6 +42,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     SkillviaTheme {
-        Greeting("Android")
+        Greeting("Skillvia")
     }
 }
