@@ -57,9 +57,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:19.2.0")
 
     // Supabase
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:3.2.4")
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.6.1")
-    implementation("io.github.jan-tennert.supabase:realtime-kt:3.2.4")
+   // implementation("io.github.jan-tennert.supabase:postgrest-kt:3.2.4")
+   // implementation("io.github.jan-tennert.supabase:gotrue-kt:2.6.1")
+   // implementation("io.github.jan-tennert.supabase:realtime-kt:3.2.4")
 
     // JSON parsing
     implementation("com.squareup.moshi:moshi-kotlin:1.15.2")

@@ -12,6 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.skillvia.app.ui.theme.SkillviaTheme
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.skillvia.app.ui.skills.SkillsListScreen
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,16 +24,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SkillviaTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Skillvia",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                    SkillviaApp()
             }
         }
     }
 }
+
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
@@ -36,6 +37,29 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         text = "Hello $name!",
         modifier = modifier
     )
+}
+
+@Composable
+fun SkillviaApp() {
+    val navController = rememberNavController()
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "skills_list", // going to add login screen after, and will start there after
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable("skills_list") {
+                SkillsListScreen(
+                    onSkillClick = { skillId ->
+                      navController.navigate("skill_details/$skillId")
+                    },
+                    onProfileClick = {
+                        navController.navigate("profile")
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true)
