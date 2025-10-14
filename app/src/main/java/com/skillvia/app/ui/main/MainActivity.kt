@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.skillvia.app.ui.skills.SkillsListScreen
+import com.skillvia.app.ui.skills.SkillDetailScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -51,11 +52,19 @@ fun SkillviaApp() {
             composable("skills_list") {
                 SkillsListScreen(
                     onSkillClick = { skillId ->
-                      navController.navigate("skill_details/$skillId")
+                      navController.navigate("skill_detail/$skillId")
                     },
                     onProfileClick = {
                         navController.navigate("profile")
                     }
+                )
+            }
+            composable("skill_detail/{skillId}") { backStackEntry ->
+                val skillId = backStackEntry.arguments?.getString("skillId") ?: ""
+                SkillDetailScreen(
+                    skillId = skillId,
+                    onRequestSkill =  { skillId: String -> navController.navigate("add_request/$skillId") },
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }

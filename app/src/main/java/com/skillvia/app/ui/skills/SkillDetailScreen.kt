@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SkillDetailScreen(
     skillId: String,
-    onRequestSkill: (String) -> Unit,
+    onRequestSkill: (String) -> Unit, //unit represents void return type
     onBackClick: () -> Unit
 ) {
     val skillRepo = SkillRepo()
@@ -42,7 +42,7 @@ fun SkillDetailScreen(
             title = {Text("Skill Details") },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
-                    Icons(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }    
             }
         )
@@ -154,13 +154,74 @@ fun SkillDetailScreen(
                                 contentDescription = "Location",
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                            
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Location",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = skill!!.location,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 }
-                    
-                
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                //Description Section
+                Text(
+                    text = "Description",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = skill!!.description,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                //Request Skill Button
+                Button(
+                    onClick = { onRequestSkill(skill!!.id)},
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(
+                        text = "Request This Skill",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))     
             }
     }
-    
+    else {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(40.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Text(
+            text = "Loading skill details...",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    }
 }
+
