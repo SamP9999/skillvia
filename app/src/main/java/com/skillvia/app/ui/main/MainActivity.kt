@@ -19,6 +19,8 @@ import com.skillvia.app.ui.skills.SkillsListScreen
 import com.skillvia.app.ui.skills.SkillDetailScreen
 import com.skillvia.app.ui.skills.AddSkillRequestScreen
 import com.skillvia.app.ui.profile.ProfileScreen
+import com.skillvia.app.ui.auth.LoginScreen
+import com.skillvia.app.ui.auth.SignupScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -48,9 +50,33 @@ fun SkillviaApp() {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "skills_list", // going to add login screen after, and will start there after
+            startDestination = "login",
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable("login"){
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate("skills_list") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onNavigateToSignup = {
+                        navController.navigate("signup")
+                    }
+                )
+            }
+            composable("signup"){
+                SignupScreen(
+                    onSignupSuccess = {
+                        navController.navigate("skills_list") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
             composable("skills_list") {
                 SkillsListScreen(
                     onSkillClick = { skillId ->
