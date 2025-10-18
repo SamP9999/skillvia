@@ -23,7 +23,7 @@ class SkillRepo {
             longitude = -66.6431,
             rating = 4.8f,
             totalRatings = 23,
-            createdAt = System.currentTimeMillis() - (2 * 24 * 60 * 60 * 1000L), // 2 days ago
+            createdAt = "2025-01-16T10:00:00Z",
             isActive = true
         ),
         Skill(
@@ -40,7 +40,7 @@ class SkillRepo {
             longitude = -66.6425,
             rating = 4.9f,
             totalRatings = 15,
-            createdAt = System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000L), // 5 days ago
+            createdAt = "2025-01-13T14:30:00Z",
             isActive = true
         ),
         Skill(
@@ -57,7 +57,7 @@ class SkillRepo {
             longitude = null,
             rating = 4.7f,
             totalRatings = 31,
-            createdAt = System.currentTimeMillis() - (1 * 24 * 60 * 60 * 1000L), // 1 day ago
+            createdAt = "2025-01-17T09:15:00Z",
             isActive = true
         ),
         Skill(
@@ -74,7 +74,7 @@ class SkillRepo {
             longitude = -66.6435,
             rating = 4.6f,
             totalRatings = 19,
-            createdAt = System.currentTimeMillis() - (3 * 24 * 60 * 60 * 1000L), // 3 days ago
+            createdAt = "2025-01-15T11:00:00Z",
             isActive = true
         ),
         Skill(
@@ -91,7 +91,7 @@ class SkillRepo {
             longitude = -66.6420,
             rating = 4.5f,
             totalRatings = 12,
-            createdAt = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L), // 7 days ago
+            createdAt = "2025-01-11T16:45:00Z",
             isActive = true
         ),
         Skill(
@@ -108,7 +108,7 @@ class SkillRepo {
             longitude = -66.6430,
             rating = 4.9f,
             totalRatings = 27,
-            createdAt = System.currentTimeMillis() - (4 * 24 * 60 * 60 * 1000L), // 4 days ago
+            createdAt = "2025-01-14T13:20:00Z",
             isActive = true
         ),
         Skill(
@@ -125,7 +125,7 @@ class SkillRepo {
             longitude = -66.6415,
             rating = 4.4f,
             totalRatings = 8,
-            createdAt = System.currentTimeMillis() - (6 * 24 * 60 * 60 * 1000L), // 6 days ago
+            createdAt = "2025-01-12T08:30:00Z",
             isActive = true
         ),
         Skill(
@@ -142,7 +142,7 @@ class SkillRepo {
             longitude = null,
             rating = 4.8f,
             totalRatings = 16,
-            createdAt = System.currentTimeMillis() - (1 * 24 * 60 * 60 * 1000L), // 1 day ago
+            createdAt = "2025-01-17T15:00:00Z",
             isActive = true
         )
     )
@@ -157,13 +157,11 @@ class SkillRepo {
             studentId = "12345678",
             phoneNumber = "(506) 555-0101",
             bio = "Math major with 3 years of tutoring experience. I love helping students understand complex concepts!",
-            skillsOffered = listOf("skill_001"),
-            skillsRequested = listOf("skill_004", "skill_007"),
             rating = 4.8f,
             totalRatings = 23,
             isVerified = true,
-            createdAt = System.currentTimeMillis() - (365 * 24 * 60 * 60 * 1000L), // 1 year ago
-            lastActive = System.currentTimeMillis() - (2 * 60 * 60 * 1000L) // 2 hours ago
+            createdAt = "2025-10-10T10:30:00Z",  
+            lastActive = "2025-10-10T16:00:00Z"  
         ),
         User(
             id = "user_002",
@@ -173,15 +171,12 @@ class SkillRepo {
             studentId = "87654321",
             phoneNumber = "(506) 555-0102",
             bio = "Music student and guitar enthusiast. I've been playing for 8 years and love teaching beginners!",
-            skillsOffered = listOf("skill_002"),
-            skillsRequested = listOf("skill_001", "skill_008"),
             rating = 4.9f,
             totalRatings = 15,
             isVerified = true,
-            createdAt = System.currentTimeMillis() - (200 * 24 * 60 * 60 * 1000L), // 200 days ago
-            lastActive = System.currentTimeMillis() - (30 * 60 * 1000L) // 30 minutes ago
-        )
-        // Add more users as needed
+            createdAt = "2025-10-11T10:30:00Z",  
+            lastActive = "2025-10-11T16:00:00Z" 
+        ),
     )
 
     // Sample skill requests data

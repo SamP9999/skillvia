@@ -11,17 +11,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import com.skillvia.app.data.repository.AuthRepository
 
 @Composable
 fun SignupScreen(
     onSignupSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
+    val authRepository = AuthRepository()
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var university by remember { mutableStateOf("") }
+    var studentId by remember { mutableStateOf("") }
+    
+    // UNB-only for MVP (fixed value)
+    val university = "University of New Brunswick"
+    
+    // TODO: For multi-university expansion, uncomment below and remove the fixed university above:
+    // var selectedUniversity by remember { mutableStateOf("") }
+    // val universities = listOf(
+    //     "University of New Brunswick",
+    //     "Dalhousie University",
+    //     "Saint Mary's University",
+    //     "Mount Allison University"
+    // )
+    // val universityToEmailDomain = mapOf(
+    //     "University of New Brunswick" to "@unb.ca",
+    //     "Dalhousie University" to "@dal.ca",
+    //     "Saint Mary's University" to "@smu.ca",
+    //     "Mount Allison University" to "@mta.ca"
+    // )
+    
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
@@ -66,6 +87,7 @@ fun SignupScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("University Email") },
+            placeholder = { Text("yourname@unb.ca") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             enabled = !isLoading
@@ -74,14 +96,59 @@ fun SignupScreen(
         Spacer(modifier = Modifier.height(16.dp))
         
         OutlinedTextField(
-            value = university,
-            onValueChange = { university = it },
-            label = { Text("University") },
-            placeholder = { Text("e.g. University of New Brunswick") },
+            value = studentId,
+            onValueChange = { studentId = it },
+            label = { Text("Student ID") },
+            placeholder = { Text("e.g. 123456789") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             enabled = !isLoading
         )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // UNB-only: Fixed university field (disabled)
+        OutlinedTextField(
+            value = university,
+            onValueChange = { },
+            label = { Text("University") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            enabled = false
+        )
+        
+        // TODO: For multi-university expansion, replace above OutlinedTextField with dropdown:
+        // var expanded by remember { mutableStateOf(false) }
+        // ExposedDropdownMenuBox(
+        //     expanded = expanded,
+        //     onExpandedChange = { expanded = !expanded }
+        // ) {
+        //     OutlinedTextField(
+        //         value = selectedUniversity,
+        //         onValueChange = { },
+        //         readOnly = true,
+        //         label = { Text("University") },
+        //         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+        //         modifier = Modifier
+        //             .fillMaxWidth()
+        //             .menuAnchor(),
+        //         enabled = !isLoading
+        //     )
+        //     ExposedDropdownMenu(
+        //         expanded = expanded,
+        //         onDismissRequest = { expanded = false }
+        //     ) {
+        //         universities.forEach { uni ->
+        //             DropdownMenuItem(
+        //                 text = { Text(uni) },
+        //                 onClick = {
+        //                     selectedUniversity = uni
+        //                     expanded = false
+        //                 }
+        //             )
+        //         }
+        //     }
+        // }
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -122,23 +189,57 @@ fun SignupScreen(
         
         Button(
             onClick = {
+                // UNB-only validation
                 when {
                     name.isBlank() -> errorMessage = "Please enter your name"
                     email.isBlank() -> errorMessage = "Please enter your email"
-                    university.isBlank() -> errorMessage = "Please enter your university"
+                    !email.endsWith("@unb.ca") -> errorMessage = "Must use UNB email (@unb.ca)"
+                    studentId.isBlank() -> errorMessage = "Please enter your student ID"
+                    studentId.length != 7 -> errorMessage = "UNB student ID must be 7 digits"
                     password.isBlank() -> errorMessage = "Please enter a password"
                     password.length < 6 -> errorMessage = "Password must be at least 6 characters"
                     password != confirmPassword -> errorMessage = "Passwords don't match"
                     else -> {
-                        errorMessage = ""
-                        isLoading = true
-                        scope.launch {
-                            kotlinx.coroutines.delay(1500)
-                            isLoading = false
-                            onSignupSuccess()
-                        }
+                      errorMessage = ""
+                      isLoading = true
+                      scope.launch {
+                          val result = authRepository.signUp(email, password, name, university, studentId)
+                          isLoading = false
+                          if (result.isSuccess) {
+                              onSignupSuccess()
+                          } else {
+                              errorMessage = result.exceptionOrNull()?.message ?: "Signup failed"
+                          }
+                      }
                     }
-                }
+                  }
+                
+                // TODO: For multi-university expansion, replace above validation with:
+                // when {
+                //     name.isBlank() -> errorMessage = "Please enter your name"
+                //     email.isBlank() -> errorMessage = "Please enter your email"
+                //     selectedUniversity.isBlank() -> errorMessage = "Please select your university"
+                //     else -> {
+                //         val expectedDomain = universityToEmailDomain[selectedUniversity]
+                //         when {
+                //             expectedDomain == null -> errorMessage = "Invalid university selected"
+                //             !email.endsWith(expectedDomain) -> errorMessage = "Email must match your university domain ($expectedDomain)"
+                //             studentId.isBlank() -> errorMessage = "Please enter your student ID"
+                //             password.isBlank() -> errorMessage = "Please enter a password"
+                //             password.length < 6 -> errorMessage = "Password must be at least 6 characters"
+                //             password != confirmPassword -> errorMessage = "Passwords don't match"
+                //             else -> {
+                //                 errorMessage = ""
+                //                 isLoading = true
+                //                 scope.launch {
+                //                     kotlinx.coroutines.delay(1500)
+                //                     isLoading = false
+                //                     onSignupSuccess()
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading

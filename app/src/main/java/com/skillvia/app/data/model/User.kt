@@ -1,19 +1,28 @@
 package com.skillvia.app.data.model
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
+
+@Serializable
 data class User (
     val id: String = "",
     val name: String = "",
     val email: String = "",
     val university: String = "",
+    @SerialName("student_id")
     val studentId: String = "",
+    @SerialName("phone_number")
     val phoneNumber: String = "",
+    @SerialName("profile_image_url")
     val profileImageUrl: String = "",
     val bio: String = "",
-    val skillsOffered: List<String> = emptyList(),
-    val skillsRequested: List<String> = emptyList(),
     val rating: Float = 0.0f,
+    @SerialName("total_ratings")
     val totalRatings: Int = 0,
+    @SerialName("is_verified")
     val isVerified: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis(),
-    val lastActive: Long = System.currentTimeMillis()
+    @SerialName("created_at")
+    val createdAt: String = "",
+    @SerialName("last_active")
+    val lastActive: String = ""
 )

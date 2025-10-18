@@ -9,12 +9,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import com.skillvia.app.data.repository.AuthRepository
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToSignup: () -> Unit
 ) {
+    val authRepository = AuthRepository()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -81,17 +83,33 @@ fun LoginScreen(
         
         Button(
             onClick = {
-                if (email.isNotBlank() && password.isNotBlank()) {
-                    isLoading = true
-                    errorMessage = ""
-                    scope.launch {
-                        kotlinx.coroutines.delay(1000)
-                        isLoading = false
-                        onLoginSuccess()
+                when {
+                    email.isBlank() -> errorMessage = "Please enter your email"
+                    password.isBlank() -> errorMessage = "Please enter your password"
+                    !email.endsWith("@unb.ca") -> errorMessage = "Must use UNB email (@unb.ca)"
+                    else -> {
+                        isLoading = true
+                        errorMessage = ""
+                        scope.launch {
+                            val result = authRepository.signIn(email, password)
+                            isLoading = false
+                            if (result.isSuccess) {
+                                onLoginSuccess()
+                            } else {
+                                errorMessage = result.exceptionOrNull()?.message ?: "Login failed"
+                            }
+                        }
                     }
-                } else {
-                    errorMessage = "Please enter email and password"
                 }
+                
+                // TODO: For multi-university expansion, remove @unb.ca check above
+                // Just validate email format instead:
+                // when {
+                //     email.isBlank() -> errorMessage = "Please enter your email"
+                //     password.isBlank() -> errorMessage = "Please enter your password"
+                //     !email.contains("@") -> errorMessage = "Please enter a valid email"
+                //     else -> { /* proceed with login */ }
+                // }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading

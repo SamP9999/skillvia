@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.Skill
 import com.skillvia.app.data.model.SkillCategory
+import com.skillvia.app.data.repository.AuthRepository
 import com.skillvia.app.data.repository.SkillRepo
 import com.skillvia.app.ui.components.SkillCard  // Import shared SkillCard component
 import kotlinx.coroutines.launch
@@ -29,10 +31,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun SkillsListScreen(
     onSkillClick: (String) -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onLogout: () -> Unit
 ) {
+    val authRepository = AuthRepository()
     val skillRepo = SkillRepo()  // Create repository instance
     var skills by remember { mutableStateOf<List<Skill>>(emptyList()) }  // State for skills list
+    var showLogoutDialog by remember { mutableStateOf(false) }  // State for logout confirmation dialog
     val scope = rememberCoroutineScope()  // For async operations
     
     // Load skills when screen first appears
@@ -58,8 +63,13 @@ fun SkillsListScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
-            IconButton(onClick = onProfileClick) {
-                Icon(Icons.Default.Person, contentDescription = "Profile")
+            Row {
+                IconButton(onClick = onProfileClick) {
+                    Icon(Icons.Default.Person, contentDescription = "Profile")
+                }
+                IconButton(onClick = { showLogoutDialog = true }) {
+                    Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
+                }
             }
         }
         
@@ -76,5 +86,32 @@ fun SkillsListScreen(
                 )
             }
         }
+    }
+    
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Logout") },
+            text = { Text("Are you sure you want to logout?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        scope.launch {
+                            authRepository.signOut()
+                            onLogout()
+                        }
+                    }
+                ) {
+                    Text("Yes, Logout")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

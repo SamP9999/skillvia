@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.Skill
 import com.skillvia.app.data.model.User
+import com.skillvia.app.data.repository.AuthRepository
 import com.skillvia.app.data.repository.SkillRepo
 import com.skillvia.app.ui.components.SkillCard 
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ fun ProfileScreen(
     onBackClick: () -> Unit
 ) {
     val skillRepo = SkillRepo()
+    val authRepository = AuthRepository()
     var currentUser by remember { mutableStateOf<User?>(null)}
     var userSkills by remember { mutableStateOf<List<Skill>>(emptyList())}
     var requestedSkills by remember { mutableStateOf<List<Skill>>(emptyList())}
@@ -35,12 +37,15 @@ fun ProfileScreen(
     // Load user data when screen first appears
     LaunchedEffect(Unit) {
         scope.launch {
-            // Get current user (using first user as example for demo), will change once supabase is implemented
-            currentUser = skillRepo.getUserById("user_001")
+            // Get the ACTUAL logged-in user's ID from Supabase Auth
+            val userId = authRepository.getCurrentUserId() ?: "user_001"  // Fallback to user_001 if not logged in
+            
+            currentUser = skillRepo.getUserById(userId)  // ← Use real user ID
             val allSkills = skillRepo.getAllSkills()
             userSkills = allSkills.filter { it.providerID == currentUser?.id }
-            val requestSkillIds = currentUser?.skillsRequested ?: emptyList()
-            requestedSkills = allSkills.filter { it.id in requestSkillIds }
+            
+            val requestedSkillIds = listOf("skill_004", "skill_007") // TODO: Get actual requested skills from user profile, hardcoded for now
+            requestedSkills = allSkills.filter { it.id in requestedSkillIds }
         }
     }
     Column(

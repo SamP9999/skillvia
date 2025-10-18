@@ -84,6 +84,11 @@ fun SkillviaApp() {
                     },
                     onProfileClick = {
                         navController.navigate("profile")
+                    },
+                    onLogout = {
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }
