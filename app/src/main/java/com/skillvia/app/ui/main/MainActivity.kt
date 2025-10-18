@@ -18,6 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import com.skillvia.app.ui.skills.SkillsListScreen
 import com.skillvia.app.ui.skills.SkillDetailScreen
 import com.skillvia.app.ui.skills.AddSkillRequestScreen
+import com.skillvia.app.ui.profile.ProfileScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -73,6 +74,11 @@ fun SkillviaApp() {
                 AddSkillRequestScreen(
                     skillId = skillId,
                     onRequestSubmitted = { navController.popBackStack() },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+            composable("profile") {
+                ProfileScreen(
                     onBackClick = { navController.popBackStack() }
                 )
             }
