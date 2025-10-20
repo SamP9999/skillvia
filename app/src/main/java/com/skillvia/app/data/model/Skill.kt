@@ -12,10 +12,7 @@ data class Skill(
     val price: Double = 0.0,
     @SerialName("provider_id")
     val providerID: String = "",
-    @SerialName("provider_name")
-    val providerName: String = "",
-    @SerialName("provider_email")
-    val providerEmail: String = "",
+    val providerName: String? = null, // Optional - populated by SkillRepo
     val location: String = "",
     val latitude: Double? = null,
     val longitude: Double? = null,

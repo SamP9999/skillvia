@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.Skill
+import com.skillvia.app.data.model.User
 import com.skillvia.app.data.repository.SkillRepo
 import kotlinx.coroutines.launch
 
@@ -27,11 +28,16 @@ fun SkillDetailScreen(
 ) {
     val skillRepo = SkillRepo()
     var skill by remember { mutableStateOf<Skill?>(null) }
+    var provider by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(skillId) {
         scope.launch {
             skill = skillRepo.getSkillById(skillId)
+            // Fetch provider information
+            if (skill != null) {
+                provider = skillRepo.getUserById(skill!!.providerID)
+            }
         }
     }
 
@@ -124,12 +130,12 @@ fun SkillDetailScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = skill!!.providerName,
+                            text = provider?.name ?: "Loading...",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = skill!!.providerEmail,
+                            text = provider?.email ?: "",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

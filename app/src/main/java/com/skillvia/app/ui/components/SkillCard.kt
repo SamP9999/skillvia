@@ -38,7 +38,7 @@ fun SkillCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = skill.providerName,
+                        text = skill.providerName ?: "Loading...",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

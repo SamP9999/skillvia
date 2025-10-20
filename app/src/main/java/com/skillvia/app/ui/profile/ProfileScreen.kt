@@ -37,15 +37,27 @@ fun ProfileScreen(
     // Load user data when screen first appears
     LaunchedEffect(Unit) {
         scope.launch {
-            // Get the ACTUAL logged-in user's ID from Supabase Auth
-            val userId = authRepository.getCurrentUserId() ?: "user_001"  // Fallback to user_001 if not logged in
-            
-            currentUser = skillRepo.getUserById(userId)  // ← Use real user ID
-            val allSkills = skillRepo.getAllSkills()
-            userSkills = allSkills.filter { it.providerID == currentUser?.id }
-            
-            val requestedSkillIds = listOf("skill_004", "skill_007") // TODO: Get actual requested skills from user profile, hardcoded for now
-            requestedSkills = allSkills.filter { it.id in requestedSkillIds }
+            try {
+                // Get the logged-in user's ID from Supabase Auth
+                val userId = authRepository.getCurrentUserId()
+                
+                if (userId != null) {
+                    // Fetch user from Supabase
+                    currentUser = skillRepo.getUserById(userId)
+                    
+                    if (currentUser != null) {
+                        val allSkills = skillRepo.getAllSkills()
+                        userSkills = allSkills.filter { it.providerID == currentUser?.id }
+                        
+                        // TODO: Fetch requested skills from skill_requests table in Supabase
+                        // For now, leave empty since we're not storing skill requests yet
+                        requestedSkills = emptyList()
+                    }
+                }
+            } catch (e: Exception) {
+                println("Error loading profile: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
     Column(
@@ -114,10 +126,10 @@ fun ProfileScreen(
                             text = "University: ${currentUser!!.university}",
                             style = MaterialTheme.typography.bodyLarge,
                         )
-                        if(currentUser!!.bio.isNotEmpty()) {
+                        if(!currentUser!!.bio.isNullOrEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = currentUser!!.bio,
+                                text = currentUser!!.bio!!,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }

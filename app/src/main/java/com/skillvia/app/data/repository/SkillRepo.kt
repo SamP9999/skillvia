@@ -4,20 +4,22 @@ import com.skillvia.app.data.model.SkillCategory
 import com.skillvia.app.data.model.User
 import com.skillvia.app.data.model.SkillRequest
 import com.skillvia.app.data.model.RequestStatus
+import com.skillvia.app.data.supabase.SupabaseClient
 import com.skillvia.app.utils.LocationUtils
+import io.github.jan.supabase.postgrest.from
 
 class SkillRepo {
+    private val supabase = SupabaseClient.client
     // Sample skills data
     private val sampleSkills = listOf(
         Skill(
-            id = "skill_001",
+            id = "550e8400-e29b-41d4-a716-446655440001",
             title = "Math Tutoring",
             description = "Help with calculus, algebra, and statistics. I can assist with homework, exam prep, and understanding difficult concepts.",
             category = SkillCategory.ACADEMIC,
             price = 15.0,
-            providerID = "user_001",
+            providerID = "550e8400-e29b-41d4-a716-446655440011",
             providerName = "Alex Johnson",
-            providerEmail = "alex.johnson@unb.ca",
             location = "UNB Campus Library",
             latitude = 45.9636,
             longitude = -66.6431,
@@ -27,14 +29,13 @@ class SkillRepo {
             isActive = true
         ),
         Skill(
-            id = "skill_002",
+            id = "550e8400-e29b-41d4-a716-446655440002",
             title = "Guitar Lessons",
             description = "Learn basic guitar chords, strumming patterns, and simple songs. Perfect for beginners!",
             category = SkillCategory.CREATIVE_ARTS,
             price = 20.0,
-            providerID = "user_002",
+            providerID = "550e8400-e29b-41d4-a716-446655440012",
             providerName = "Sarah Chen",
-            providerEmail = "sarah.chen@unb.ca",
             location = "UNB Music Building",
             latitude = 45.9640,
             longitude = -66.6425,
@@ -44,14 +45,13 @@ class SkillRepo {
             isActive = true
         ),
         Skill(
-            id = "skill_003",
+            id = "550e8400-e29b-41d4-a716-446655440003",
             title = "Resume Writing",
             description = "Help with resume formatting, content optimization, and cover letter writing. I've helped 50+ students land internships!",
             category = SkillCategory.LIFE_SKILLS,
             price = 25.0,
-            providerID = "user_003",
+            providerID = "550e8400-e29b-41d4-a716-446655440013",
             providerName = "Michael Rodriguez",
-            providerEmail = "michael.rodriguez@unb.ca",
             location = "Online",
             latitude = null,
             longitude = null,
@@ -61,14 +61,13 @@ class SkillRepo {
             isActive = true
         ),
         Skill(
-            id = "skill_004",
+            id = "550e8400-e29b-41d4-a716-446655440004",
             title = "Python Programming",
             description = "Learn Python basics, data structures, and simple projects. Great for beginners or those wanting to improve their coding skills.",
             category = SkillCategory.TECHNOLOGY,
             price = 18.0,
-            providerID = "user_004",
+            providerID = "550e8400-e29b-41d4-a716-446655440014",
             providerName = "Emma Thompson",
-            providerEmail = "emma.thompson@unb.ca",
             location = "UNB Computer Science Building",
             latitude = 45.9630,
             longitude = -66.6435,
@@ -78,14 +77,13 @@ class SkillRepo {
             isActive = true
         ),
         Skill(
-            id = "skill_005",
+            id = "550e8400-e29b-41d4-a716-446655440005",
             title = "Personal Training",
             description = "Customized workout plans and fitness guidance. I can help you reach your fitness goals with proper form and motivation.",
             category = SkillCategory.FITNESS_LIFESTYLE,
             price = 22.0,
-            providerID = "user_005",
+            providerID = "550e8400-e29b-41d4-a716-446655440015",
             providerName = "David Kim",
-            providerEmail = "david.kim@unb.ca",
             location = "UNB Fitness Center",
             latitude = 45.9645,
             longitude = -66.6420,
@@ -101,8 +99,6 @@ class SkillRepo {
             category = SkillCategory.ACADEMIC,
             price = 16.0,
             providerID = "user_006",
-            providerName = "Lisa Wang",
-            providerEmail = "lisa.wang@unb.ca",
             location = "UNB English Department",
             latitude = 45.9632,
             longitude = -66.6430,
@@ -118,8 +114,6 @@ class SkillRepo {
             category = SkillCategory.CREATIVE_ARTS,
             price = 20.0,
             providerID = "user_007",
-            providerName = "James Wilson",
-            providerEmail = "james.wilson@unb.ca",
             location = "Downtown Fredericton",
             latitude = 45.9650,
             longitude = -66.6415,
@@ -135,8 +129,6 @@ class SkillRepo {
             category = SkillCategory.LIFE_SKILLS,
             price = 14.0,
             providerID = "user_008",
-            providerName = "Rachel Green",
-            providerEmail = "rachel.green@unb.ca",
             location = "Online",
             latitude = null,
             longitude = null,
@@ -182,102 +174,250 @@ class SkillRepo {
     // Sample skill requests data
     private val sampleRequests = listOf(
         SkillRequest(
-            id = "request_001",
-            skillId = "skill_001",
-            requesterId = "user_002",
-            providerId = "user_001",
+            id = "550e8400-e29b-41d4-a716-446655440101",
+            skillId = "550e8400-e29b-41d4-a716-446655440001",
+            requesterId = "550e8400-e29b-41d4-a716-446655440012",
+            providerId = "550e8400-e29b-41d4-a716-446655440011",
             message = "Hi Alex! I'm struggling with calculus and would love some help with integration. Are you available this weekend?",
-            status = RequestStatus.PENDING,
-            requestedDate = System.currentTimeMillis() - (2 * 60 * 60 * 1000L), // 2 hours ago
+            status = "PENDING",
+            requestedDate = "2024-01-15T10:00:00Z", // 2 hours ago
             price = 15.0
         ),
         SkillRequest(
-            id = "request_002",
-            skillId = "skill_002",
-            requesterId = "user_001",
-            providerId = "user_002",
+            id = "550e8400-e29b-41d4-a716-446655440102",
+            skillId = "550e8400-e29b-41d4-a716-446655440002",
+            requesterId = "550e8400-e29b-41d4-a716-446655440011",
+            providerId = "550e8400-e29b-41d4-a716-446655440012",
             message = "Hi Sarah! I've always wanted to learn guitar. Do you have time for a lesson this week?",
-            status = RequestStatus.ACCEPTED,
-            requestedDate = System.currentTimeMillis() - (24 * 60 * 60 * 1000L), // 1 day ago
-            acceptedDate = System.currentTimeMillis() - (20 * 60 * 60 * 1000L), // 20 hours ago
+            status = "ACCEPTED",
+            requestedDate = "2024-01-14T10:00:00Z", 
+            acceptedDate = "2024-01-14T14:00:00Z", 
             meetingLocation = "UNB Music Building",
-            meetingTime = System.currentTimeMillis() + (2 * 24 * 60 * 60 * 1000L), // 2 days from now
+            meetingTime = "2024-01-17T10:00:00Z", 
             price = 20.0
         )
     )
 
     // Repository methods
     suspend fun getAllSkills(): List<Skill> {
-        return sampleSkills.filter { it.isActive }
+        return try {
+            // Fetch skills from Supabase
+            val skills = supabase.from("skills")
+                .select()
+                .decodeList<Skill>()
+            
+            // Fetch all users to populate provider names
+            val users = supabase.from("users")
+                .select()
+                .decodeList<User>()
+            
+            // Create a map of user IDs to names for quick lookup
+            val userMap = users.associateBy { it.id }
+            
+            // Populate provider names
+            val skillsWithProviders = skills.map { skill ->
+                skill.copy(providerName = userMap[skill.providerID]?.name)
+            }
+            
+            skillsWithProviders.filter { it.isActive }
+        } catch (e: Exception) {
+            println("Error fetching skills from Supabase: ${e.message}")
+            e.printStackTrace()
+            // Fallback to sample data if Supabase fails
+            sampleSkills.filter { it.isActive }
+        }
     }
 
     suspend fun getSkillsByCategory(category: SkillCategory): List<Skill> {
-        return sampleSkills.filter { it.category == category && it.isActive }
+        return try {
+            // Fetch all skills from Supabase and filter by category
+            val skills = supabase.from("skills")
+                .select()
+                .decodeList<Skill>()
+            
+            skills.filter { it.category == category && it.isActive }
+        } catch (e: Exception) {
+            println("Error fetching skills by category from Supabase: ${e.message}")
+            e.printStackTrace()
+            // Fallback to sample data if Supabase fails
+            sampleSkills.filter { it.category == category && it.isActive }
+        }
     }
 
     suspend fun getSkillById(id: String): Skill? {
-        return sampleSkills.find { it.id == id }
+        return try {
+            // Fetch all skills from Supabase and find by ID
+            val skills = supabase.from("skills")
+                .select()
+                .decodeList<Skill>()
+            
+            skills.find { it.id == id }
+        } catch (e: Exception) {
+            println("Error fetching skill from Supabase: ${e.message}")
+            e.printStackTrace()
+            // Fallback to sample data if Supabase fails
+            sampleSkills.find { it.id == id }
+        }
     }
 
     suspend fun searchSkills(query: String): List<Skill> {
-        return sampleSkills.filter { skill ->
-            skill.isActive && (
+        return try {
+            // Fetch all skills from Supabase and filter by search query
+            val skills = supabase.from("skills")
+                .select()
+                .decodeList<Skill>()
+            
+            // Filter by search query in Kotlin
+            skills.filter { skill ->
+                skill.isActive && (
                     skill.title.contains(query, ignoreCase = true) ||
-                            skill.description.contains(query, ignoreCase = true) ||
-                            skill.providerName.contains(query, ignoreCase = true)
-                    )
+                    skill.description.contains(query, ignoreCase = true)
+                )
+            }
+        } catch (e: Exception) {
+            println("Error searching skills from Supabase: ${e.message}")
+            e.printStackTrace()
+            // Fallback to sample data if Supabase fails
+            sampleSkills.filter { skill ->
+                skill.isActive && (
+                    skill.title.contains(query, ignoreCase = true) ||
+                    skill.description.contains(query, ignoreCase = true)
+                )
+            }
         }
     }
 
     suspend fun getSkillsNearLocation(latitude: Double, longitude: Double, radiusKm: Double): List<Skill> {
-        return sampleSkills.filter { skill ->
-            skill.isActive && skill.latitude != null && skill.longitude != null &&
-                    LocationUtils.calculateDistance(latitude, longitude, skill.latitude, skill.longitude) <= radiusKm
+        return try {
+            // Fetch all skills from Supabase and filter by location
+            val skills = supabase.from("skills")
+                .select()
+                .decodeList<Skill>()
+            
+            // Filter by distance in Kotlin
+            skills.filter { skill ->
+                skill.isActive && skill.latitude != null && skill.longitude != null &&
+                LocationUtils.calculateDistance(latitude, longitude, skill.latitude, skill.longitude) <= radiusKm
+            }
+        } catch (e: Exception) {
+            println("Error fetching skills near location from Supabase: ${e.message}")
+            e.printStackTrace()
+            // Fallback to sample data if Supabase fails
+            sampleSkills.filter { skill ->
+                skill.isActive && skill.latitude != null && skill.longitude != null &&
+                LocationUtils.calculateDistance(latitude, longitude, skill.latitude, skill.longitude) <= radiusKm
+            }
         }
     }
 
     suspend fun getUserById(id: String): User? {
-        return sampleUsers.find { it.id == id }
-    }
-
-    suspend fun getAllRequests(): List<SkillRequest> {
-        return sampleRequests
-    }
-
-    suspend fun getRequestsByUserId(userId: String): List<SkillRequest> {
-        return sampleRequests.filter {
-            it.requesterId == userId || it.providerId == userId
+        return try {
+            // Fetch user from Supabase only
+            val users = supabase.from("users")
+                .select()
+                .decodeList<User>()
+            
+            users.find { it.id == id }
+        } catch (e: Exception) {
+            println("Error fetching user from Supabase: ${e.message}")
+            e.printStackTrace()
+            null
         }
     }
 
-    suspend fun createRequest(request: SkillRequest): SkillRequest {
-        // In a real app, this would save to database
-        // For now, just return the request
-        return request
+    suspend fun getAllRequests(): List<SkillRequest> {
+        return try {
+            // Fetch skill requests from Supabase
+            val requests = supabase.from("skill_requests")
+                .select()
+                .decodeList<SkillRequest>()
+            
+            requests // try returns its last value
+        } catch (e: Exception) {
+            println("Error fetching skill requests from Supabase: ${e.message}")
+            e.printStackTrace()
+            // Fallback to sample data if Supabase fails
+            sampleRequests
+        }
     }
 
-    suspend fun updateRequestStatus(requestId: String, status: RequestStatus): Boolean {
-        // In a real app, this would update the database
-        // For now, just return true
-        return true
-    }
-    // ===== DATA MANAGEMENT METHODS (for later) =====
-    suspend fun addSkill(skill: Skill): Skill {
-        // In a real app, this would save to database
-        // For now, just return the skill
-        return skill
+    suspend fun getRequestsByUserId(userId: String): List<SkillRequest> {
+        return try {
+            // Fetch all skill requests from Supabase and filter by user ID
+            val requests = supabase.from("skill_requests")
+                .select()
+                .decodeList<SkillRequest>()
+            
+            requests.filter { it.requesterId == userId || it.providerId == userId }
+        } catch (e: Exception) {
+            println("Error fetching requests by user ID from Supabase: ${e.message}")
+            e.printStackTrace()
+            // Fallback to sample data if Supabase fails
+            sampleRequests.filter {
+                it.requesterId == userId || it.providerId == userId
+            }
+        }
     }
 
-    suspend fun updateSkill(skill: Skill): Skill {
-        // In a real app, this would update the database
-        // For now, just return the skill
-        return skill
+    suspend fun createRequest(request: SkillRequest): Result<SkillRequest> {
+        return try {
+            // Insert request into Supabase
+            supabase.from("skill_requests").insert(request)
+            Result.success(request)
+        } catch (e: Exception) {
+            println("Error creating skill request: ${e.message}")
+            e.printStackTrace()
+            Result.failure(e)
+        }
     }
 
-    suspend fun deleteSkill(id: String): Boolean {
-        // In a real app, this would delete from database
-        // For now, just return true
-        return true
+    suspend fun updateRequestStatus(requestId: String, status: String): Boolean {
+        return try {
+            // For now, just return true since update functionality is complex
+            // In a real app, you'd update the database here
+            true
+        } catch (e: Exception) {
+            println("Error updating request status: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun addSkill(skill: Skill): Result<Skill> {
+        return try {
+            supabase.from("skills")
+                .insert(skill)
+            
+            Result.success(skill)
+        } catch (e: Exception) {
+            println("Error adding skill: ${e.message}")
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateSkill(skill: Skill): Result<Skill> {
+        return try {
+            // For now, just return success since update functionality is complex
+            // In a real app, you'd update the database here
+            Result.success(skill)
+        } catch (e: Exception) {
+            println("Error updating skill: ${e.message}")
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteSkill(id: String): Result<Boolean> {
+        return try {
+            // For now, just return success since delete functionality is complex
+            // In a real app, you'd delete from the database here
+            Result.success(true)
+        } catch (e: Exception) {
+            println("Error deleting skill: ${e.message}")
+            e.printStackTrace()
+            Result.failure(e)
+        }
     }
 
 }
