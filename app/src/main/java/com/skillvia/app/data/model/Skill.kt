@@ -8,11 +8,12 @@ data class Skill(
     val id: String = "",
     val title: String = "",
     val description: String = "",
-    val category: SkillCategory = SkillCategory.ACADEMIC,
+    @SerialName("category")
+    val category: String = "ACADEMIC",
     val price: Double = 0.0,
     @SerialName("provider_id")
     val providerID: String = "",
-    val providerName: String? = null, // Optional - populated by SkillRepo
+    val providerName: String? = null, 
     val location: String = "",
     val latitude: Double? = null,
     val longitude: Double? = null,

@@ -21,11 +21,13 @@ import com.skillvia.app.data.repository.AuthRepository
 import com.skillvia.app.data.repository.SkillRepo
 import com.skillvia.app.ui.components.SkillCard 
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Add
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onAddSkillClick: () -> Unit
 ) {
     val skillRepo = SkillRepo()
     val authRepository = AuthRepository()
@@ -159,6 +161,24 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+                //Add Skill Button
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { onAddSkillClick() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add Skill",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add New Skill")
                 }
                 Spacer(modifier = Modifier.height(24.dp))
 

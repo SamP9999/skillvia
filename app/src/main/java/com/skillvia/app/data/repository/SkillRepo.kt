@@ -7,6 +7,8 @@ import com.skillvia.app.data.model.RequestStatus
 import com.skillvia.app.data.supabase.SupabaseClient
 import com.skillvia.app.utils.LocationUtils
 import io.github.jan.supabase.postgrest.from
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 class SkillRepo {
     private val supabase = SupabaseClient.client
@@ -16,7 +18,7 @@ class SkillRepo {
             id = "550e8400-e29b-41d4-a716-446655440001",
             title = "Math Tutoring",
             description = "Help with calculus, algebra, and statistics. I can assist with homework, exam prep, and understanding difficult concepts.",
-            category = SkillCategory.ACADEMIC,
+            category = "ACADEMIC",
             price = 15.0,
             providerID = "550e8400-e29b-41d4-a716-446655440011",
             providerName = "Alex Johnson",
@@ -32,7 +34,7 @@ class SkillRepo {
             id = "550e8400-e29b-41d4-a716-446655440002",
             title = "Guitar Lessons",
             description = "Learn basic guitar chords, strumming patterns, and simple songs. Perfect for beginners!",
-            category = SkillCategory.CREATIVE_ARTS,
+            category = "CREATIVE_ARTS",
             price = 20.0,
             providerID = "550e8400-e29b-41d4-a716-446655440012",
             providerName = "Sarah Chen",
@@ -48,7 +50,7 @@ class SkillRepo {
             id = "550e8400-e29b-41d4-a716-446655440003",
             title = "Resume Writing",
             description = "Help with resume formatting, content optimization, and cover letter writing. I've helped 50+ students land internships!",
-            category = SkillCategory.LIFE_SKILLS,
+            category = "LIFE_SKILLS",
             price = 25.0,
             providerID = "550e8400-e29b-41d4-a716-446655440013",
             providerName = "Michael Rodriguez",
@@ -64,7 +66,7 @@ class SkillRepo {
             id = "550e8400-e29b-41d4-a716-446655440004",
             title = "Python Programming",
             description = "Learn Python basics, data structures, and simple projects. Great for beginners or those wanting to improve their coding skills.",
-            category = SkillCategory.TECHNOLOGY,
+            category = "TECHNOLOGY",
             price = 18.0,
             providerID = "550e8400-e29b-41d4-a716-446655440014",
             providerName = "Emma Thompson",
@@ -80,7 +82,7 @@ class SkillRepo {
             id = "550e8400-e29b-41d4-a716-446655440005",
             title = "Personal Training",
             description = "Customized workout plans and fitness guidance. I can help you reach your fitness goals with proper form and motivation.",
-            category = SkillCategory.FITNESS_LIFESTYLE,
+            category = "FITNESS_LIFESTYLE",
             price = 22.0,
             providerID = "550e8400-e29b-41d4-a716-446655440015",
             providerName = "David Kim",
@@ -96,7 +98,7 @@ class SkillRepo {
             id = "skill_006",
             title = "English Essay Writing",
             description = "Help with essay structure, thesis development, and academic writing style. I can review drafts and provide feedback.",
-            category = SkillCategory.ACADEMIC,
+            category = "ACADEMIC",
             price = 16.0,
             providerID = "user_006",
             location = "UNB English Department",
@@ -111,7 +113,7 @@ class SkillRepo {
             id = "skill_007",
             title = "Photography Basics",
             description = "Learn camera settings, composition, and basic editing. Perfect for beginners who want to improve their photos.",
-            category = SkillCategory.CREATIVE_ARTS,
+            category = "CREATIVE_ARTS",
             price = 20.0,
             providerID = "user_007",
             location = "Downtown Fredericton",
@@ -126,7 +128,7 @@ class SkillRepo {
             id = "skill_008",
             title = "Budgeting & Finance",
             description = "Learn personal finance basics, budgeting strategies, and investment fundamentals. Perfect for students managing money.",
-            category = SkillCategory.LIFE_SKILLS,
+            category = "LIFE_SKILLS",
             price = 14.0,
             providerID = "user_008",
             location = "Online",
@@ -214,7 +216,7 @@ class SkillRepo {
             // Create a map of user IDs to names for quick lookup
             val userMap = users.associateBy { it.id }
             
-            // Populate provider names
+            // Populate provider names and convert category string to enum
             val skillsWithProviders = skills.map { skill ->
                 skill.copy(providerName = userMap[skill.providerID]?.name)
             }
@@ -234,13 +236,12 @@ class SkillRepo {
             val skills = supabase.from("skills")
                 .select()
                 .decodeList<Skill>()
-            
-            skills.filter { it.category == category && it.isActive }
+            skills.filter { it.category == category.name && it.isActive }
         } catch (e: Exception) {
             println("Error fetching skills by category from Supabase: ${e.message}")
             e.printStackTrace()
             // Fallback to sample data if Supabase fails
-            sampleSkills.filter { it.category == category && it.isActive }
+            sampleSkills.filter { it.category == category.name && it.isActive }
         }
     }
 
@@ -385,8 +386,41 @@ class SkillRepo {
 
     suspend fun addSkill(skill: Skill): Result<Skill> {
         return try {
+            // Create a serializable data class for inserting into Supabase
+            @Serializable
+            data class SkillInsert(
+                val title: String,
+                val description: String,
+                val category: String,
+                val price: Double,
+                @SerialName("provider_id")
+                val providerId: String,
+                val location: String,
+                val latitude: Double? = null,
+                val longitude: Double? = null,
+                val rating: Float = 0.0f,
+                @SerialName("total_ratings")
+                val totalRatings: Int = 0,
+                @SerialName("is_active")
+                val isActive: Boolean = true
+            )
+            
+            val skillData = SkillInsert(
+                title = skill.title,
+                description = skill.description,
+                category = skill.category,
+                price = skill.price,
+                providerId = skill.providerID,
+                location = skill.location,
+                latitude = skill.latitude,
+                longitude = skill.longitude,
+                rating = skill.rating,
+                totalRatings = skill.totalRatings,
+                isActive = skill.isActive
+            )
+            
             supabase.from("skills")
-                .insert(skill)
+                .insert(skillData)
             
             Result.success(skill)
         } catch (e: Exception) {

@@ -72,7 +72,7 @@ fun SkillDetailScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = skill!!.category.name.replace("_", " "),
+                            text = skill!!.category.replace("_", " "),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
