@@ -4,6 +4,9 @@ import com.skillvia.app.data.model.SkillCategory
 import com.skillvia.app.data.model.User
 import com.skillvia.app.data.model.SkillRequest
 import com.skillvia.app.data.model.RequestStatus
+import com.skillvia.app.data.model.RequestWithDetails
+import com.skillvia.app.data.model.SkillInfo
+import com.skillvia.app.data.model.UserInfo
 import com.skillvia.app.data.supabase.SupabaseClient
 import com.skillvia.app.utils.LocationUtils
 import io.github.jan.supabase.postgrest.from
@@ -453,5 +456,49 @@ class SkillRepo {
             Result.failure(e)
         }
     }
-
+    // Fetch requests with skill titles and requester names
+    suspend fun getRequestsWithDetails(providerId: String): List<RequestWithDetails> {
+        return try {
+            // For now, fetch all requests and filter in Kotlin
+            // TODO: Implement proper Supabase joins later
+            val allRequests = supabase.from("skill_requests")
+                .select()
+                .decodeList<SkillRequest>()
+            
+            val allSkills = supabase.from("skills")
+                .select()
+                .decodeList<Skill>()
+            
+            val allUsers = supabase.from("users")
+                .select()
+                .decodeList<User>()
+            
+            // Filter requests for this provider
+            val filteredRequests = allRequests.filter { 
+                it.providerId == providerId && it.status == "PENDING" 
+            }
+            
+            // Convert to RequestWithDetails format
+            filteredRequests.map { request ->
+                val skill = allSkills.find { it.id == request.skillId }
+                val user = allUsers.find { it.id == request.requesterId }
+                
+                RequestWithDetails(
+                    id = request.id,
+                    skillId = request.skillId,
+                    requesterId = request.requesterId,
+                    providerId = request.providerId,
+                    message = request.message,
+                    status = request.status,
+                    price = request.price,
+                    skills = skill?.let { SkillInfo(title = it.title) },
+                    users = user?.let { UserInfo(name = it.name) }
+                )
+            }
+        } catch (e: Exception) {
+            println("Error fetching requests with details: ${e.message}")
+            e.printStackTrace()
+            emptyList()
+        }
+    }
 }

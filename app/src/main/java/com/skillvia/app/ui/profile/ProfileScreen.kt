@@ -14,9 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.Skill
 import com.skillvia.app.data.model.User
+import com.skillvia.app.data.model.SkillRequest
 import com.skillvia.app.data.repository.AuthRepository
 import com.skillvia.app.data.repository.SkillRepo
 import com.skillvia.app.ui.components.SkillCard 
@@ -33,7 +35,7 @@ fun ProfileScreen(
     val authRepository = AuthRepository()
     var currentUser by remember { mutableStateOf<User?>(null)}
     var userSkills by remember { mutableStateOf<List<Skill>>(emptyList())}
-    var requestedSkills by remember { mutableStateOf<List<Skill>>(emptyList())}
+    var requestedSkillsWithStatus by remember { mutableStateOf<List<Pair<Skill, SkillRequest>>>(emptyList())}
     val scope = rememberCoroutineScope()
 
     // Load user data when screen first appears
@@ -51,9 +53,15 @@ fun ProfileScreen(
                         val allSkills = skillRepo.getAllSkills()
                         userSkills = allSkills.filter { it.providerID == currentUser?.id }
                         
-                        // TODO: Fetch requested skills from skill_requests table in Supabase
-                        // For now, leave empty since we're not storing skill requests yet
-                        requestedSkills = emptyList()
+                        // Fetch requested skills from skill_requests table in Supabase
+                        val allRequests = skillRepo.getAllRequests()
+                        val userRequests = allRequests.filter { it.requesterId == currentUser?.id }
+                        
+                        // Store pairs for status display
+                        requestedSkillsWithStatus = userRequests.mapNotNull { request ->
+                            val skill = allSkills.find { it.id == request.skillId }
+                            skill?.let { Pair(it, request) }
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -190,12 +198,28 @@ fun ProfileScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if(requestedSkills.isNotEmpty()) {
-                    requestedSkills.forEach { skill ->
-                        SkillCard(
-                            skill = skill,
-                            onClick = { }
-                        )
+                if(requestedSkillsWithStatus.isNotEmpty()) {
+                    requestedSkillsWithStatus.forEach { (skill, request) ->
+                        Column {
+                            SkillCard(
+                                skill = skill,
+                                onClick = { }
+                            )
+                            // Simple status text below the card
+                            Text(
+                                text = "Status: ${request.status}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = when(request.status) {
+                                    "PENDING" -> MaterialTheme.colorScheme.secondary
+                                    "ACCEPTED" -> MaterialTheme.colorScheme.primary
+                                    "REJECTED" -> MaterialTheme.colorScheme.error
+                                    "COMPLETED" -> MaterialTheme.colorScheme.tertiary
+                                    else -> MaterialTheme.colorScheme.outline
+                                },
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 } else {
@@ -238,5 +262,3 @@ fun ProfileScreen(
         }
     }
 }
-        
-        
