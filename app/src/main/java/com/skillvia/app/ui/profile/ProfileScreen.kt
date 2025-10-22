@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,12 +25,14 @@ import com.skillvia.app.data.repository.SkillRepo
 import com.skillvia.app.ui.components.SkillCard 
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.List
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onBackClick: () -> Unit,
-    onAddSkillClick: () -> Unit
+    onAddSkillClick: () -> Unit,
+    onManageRequestsClick: () -> Unit
 ) {
     val skillRepo = SkillRepo()
     val authRepository = AuthRepository()
@@ -170,6 +173,22 @@ fun ProfileScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                
+                // Manage Requests Button (for skills I offer)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { onManageRequestsClick() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Default.List,
+                        contentDescription = "Manage Requests",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Manage Requests")
+                }
+                
                 //Add Skill Button
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
@@ -200,25 +219,114 @@ fun ProfileScreen(
 
                 if(requestedSkillsWithStatus.isNotEmpty()) {
                     requestedSkillsWithStatus.forEach { (skill, request) ->
-                        Column {
-                            SkillCard(
-                                skill = skill,
-                                onClick = { }
-                            )
-                            // Simple status text below the card
-                            Text(
-                                text = "Status: ${request.status}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = when(request.status) {
-                                    "PENDING" -> MaterialTheme.colorScheme.secondary
-                                    "ACCEPTED" -> MaterialTheme.colorScheme.primary
-                                    "REJECTED" -> MaterialTheme.colorScheme.error
-                                    "COMPLETED" -> MaterialTheme.colorScheme.tertiary
-                                    else -> MaterialTheme.colorScheme.outline
-                                },
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                            )
+                        // Show different card styles based on status
+                        if (request.status == "ACCEPTED") {
+                            // Accepted requests get a special card
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(
+                                                text = skill.title,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                            Text(
+                                                text = skill.providerName ?: "Provider",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        Text(
+                                            text = "$${String.format("%.0f", skill.price)}/hr",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    
+                                    // Show the message you sent
+                                    Text(
+                                        text = "Your Message:",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = request.message,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    
+                                    // Status badge
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = "Accepted",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "ACCEPTED",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    
+                                    // Info text
+                                    Text(
+                                        text = "💡 Coordinate meeting details with the provider through app messaging (coming soon) or contact them directly.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                    )
+                                }
+                            }
+                        } else {
+                            // Pending/Rejected requests show simple card + status
+                            Column {
+                                SkillCard(
+                                    skill = skill,
+                                    onClick = { }
+                                )
+                                // Simple status text below the card
+                                Text(
+                                    text = "Status: ${request.status}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = when(request.status) {
+                                        "PENDING" -> MaterialTheme.colorScheme.secondary
+                                        "REJECTED" -> MaterialTheme.colorScheme.error
+                                        "COMPLETED" -> MaterialTheme.colorScheme.tertiary
+                                        else -> MaterialTheme.colorScheme.outline
+                                    },
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }

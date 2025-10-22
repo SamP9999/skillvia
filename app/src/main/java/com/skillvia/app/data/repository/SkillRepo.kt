@@ -377,8 +377,18 @@ class SkillRepo {
 
     suspend fun updateRequestStatus(requestId: String, status: String): Boolean {
         return try {
-            // For now, just return true since update functionality is complex
-            // In a real app, you'd update the database here
+            supabase.from("skill_requests")
+                .update(
+                    {
+                        set("status", status) // Set the new status value
+                    }
+                ) {
+                    filter {
+                        eq("id", requestId) // Filter to only update this specific request
+                    }
+                }
+            
+            println("Request $requestId status updated to $status")
             true
         } catch (e: Exception) {
             println("Error updating request status: ${e.message}")
@@ -456,7 +466,7 @@ class SkillRepo {
             Result.failure(e)
         }
     }
-    // Fetch requests with skill titles and requester names
+    // Fetch requests with skill titles and requester names (PENDING only)
     suspend fun getRequestsWithDetails(providerId: String): List<RequestWithDetails> {
         return try {
             // For now, fetch all requests and filter in Kotlin
@@ -497,6 +507,51 @@ class SkillRepo {
             }
         } catch (e: Exception) {
             println("Error fetching requests with details: ${e.message}")
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+    
+    // Fetch all requests for a provider (both PENDING and ACCEPTED)
+    suspend fun getAllRequestsForProvider(providerId: String): List<RequestWithDetails> {
+        return try {
+            // Fetch all data from Supabase
+            val allRequests = supabase.from("skill_requests")
+                .select()
+                .decodeList<SkillRequest>()
+            
+            val allSkills = supabase.from("skills")
+                .select()
+                .decodeList<Skill>()
+            
+            val allUsers = supabase.from("users")
+                .select()
+                .decodeList<User>()
+            
+            // Filter for this provider's requests (PENDING or ACCEPTED)
+            val filteredRequests = allRequests.filter { 
+                it.providerId == providerId && (it.status == "PENDING" || it.status == "ACCEPTED")
+            }
+            
+            // Convert to RequestWithDetails format
+            filteredRequests.map { request ->
+                val skill = allSkills.find { it.id == request.skillId }
+                val user = allUsers.find { it.id == request.requesterId }
+                
+                RequestWithDetails(
+                    id = request.id,
+                    skillId = request.skillId,
+                    requesterId = request.requesterId,
+                    providerId = request.providerId,
+                    message = request.message,
+                    status = request.status,
+                    price = request.price,
+                    skills = skill?.let { SkillInfo(title = it.title) },
+                    users = user?.let { UserInfo(name = it.name) }
+                )
+            }
+        } catch (e: Exception) {
+            println("Error fetching all provider requests: ${e.message}")
             e.printStackTrace()
             emptyList()
         }

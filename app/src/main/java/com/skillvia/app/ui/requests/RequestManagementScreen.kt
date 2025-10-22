@@ -116,10 +116,20 @@ fun RequestManagementScreen(
 ) {
   val skillRepo = SkillRepo()
   val authRepository = AuthRepository()
+  
+  // State for requests and UI
   var incomingRequests by remember { mutableStateOf<List<RequestWithDetails>>(emptyList())}
+  var acceptedRequests by remember { mutableStateOf<List<RequestWithDetails>>(emptyList())}
   var isLoading by remember { mutableStateOf(true)}
   var errorMessage by remember { mutableStateOf("")}
   val scope = rememberCoroutineScope()
+  
+  // State for confirmation dialogs
+  var showAcceptDialog by remember { mutableStateOf(false) }
+  var showRejectDialog by remember { mutableStateOf(false) }
+  var showSuccessDialog by remember { mutableStateOf(false) }
+  var requestToHandle by remember { mutableStateOf<RequestWithDetails?>(null) }
+  var successMessage by remember { mutableStateOf("") }
 
   // Load data when screen first appears
   LaunchedEffect(Unit) {
@@ -129,18 +139,155 @@ fun RequestManagementScreen(
           if ( currentUserId == null) {
             errorMessage = "You must be logged in to view requests"
             isLoading = false
-            return@launch // stop execution if user not logged in
+            return@launch
           }
-          // Fetch requests with skill titles and requester names
-          val requestsWithDetails = skillRepo.getRequestsWithDetails(currentUserId)
-
-          incomingRequests = requestsWithDetails
+          
+          // Fetch ALL requests for this provider (both pending and accepted)
+          val allRequests = skillRepo.getAllRequestsForProvider(currentUserId)
+          
+          // Split into two lists based on status
+          incomingRequests = allRequests.filter { it.status == "PENDING" }
+          acceptedRequests = allRequests.filter { it.status == "ACCEPTED" }
+          
           isLoading = false
         } catch (e: Exception){
           errorMessage = "Error loading requests: ${e.message}"
           isLoading = false
         }
     }
+  }
+
+  // Accept Confirmation Dialog
+  if (showAcceptDialog && requestToHandle != null) {
+    AlertDialog(
+      onDismissRequest = { 
+        showAcceptDialog = false
+        requestToHandle = null
+      },
+      title = { Text("Accept Request") },
+      text = { 
+        Text("Are you sure you want to accept this request from ${requestToHandle?.users?.name ?: "this student"}?\n\nThey will be notified and you can coordinate meeting details.") 
+      },
+      confirmButton = {
+        Button(
+          onClick = {
+            // Capture the request details before clearing state
+            val requestId = requestToHandle?.id ?: ""
+            val studentName = requestToHandle?.users?.name ?: "the student"
+            
+            // Close dialog and clear state first
+            showAcceptDialog = false
+            val tempRequest = requestToHandle
+            requestToHandle = null
+            
+            // Then perform the async operation
+            scope.launch {
+              val success = skillRepo.updateRequestStatus(requestId, "ACCEPTED")
+              if (success) {
+                // Show success message
+                successMessage = "Request accepted! You can now coordinate with $studentName."
+                showSuccessDialog = true
+                
+                // Refresh BOTH lists
+                val currentUserId = authRepository.getCurrentUserId()
+                if(currentUserId != null) {
+                  val allRequests = skillRepo.getAllRequestsForProvider(currentUserId)
+                  incomingRequests = allRequests.filter { it.status == "PENDING" }
+                  acceptedRequests = allRequests.filter { it.status == "ACCEPTED" }
+                }
+              }
+            }
+          }
+        ) {
+          Text("Yes, Accept")
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = { 
+            showAcceptDialog = false
+            requestToHandle = null
+          }
+        ) {
+          Text("Cancel")
+        }
+      }
+    )
+  }
+
+  // Reject Confirmation Dialog
+  if (showRejectDialog && requestToHandle != null) {
+    AlertDialog(
+      onDismissRequest = { 
+        showRejectDialog = false
+        requestToHandle = null
+      },
+      title = { Text("Reject Request") },
+      text = { 
+        Text("Are you sure you want to reject this request from ${requestToHandle?.users?.name ?: "this student"}?\n\nThey will be notified that you cannot fulfill this request.") 
+      },
+      confirmButton = {
+        Button(
+          onClick = {
+            // Capture the request details before clearing state
+            val requestId = requestToHandle?.id ?: ""
+            val studentName = requestToHandle?.users?.name ?: "The student"
+            
+            // Close dialog and clear state first
+            showRejectDialog = false
+            val tempRequest = requestToHandle
+            requestToHandle = null
+            
+            // Then perform the async operation
+            scope.launch {
+              val success = skillRepo.updateRequestStatus(requestId, "REJECTED")
+              if (success) {
+                // Show success message
+                successMessage = "Request rejected. $studentName has been notified."
+                showSuccessDialog = true
+                
+                // Refresh BOTH lists
+                val currentUserId = authRepository.getCurrentUserId()
+                if(currentUserId != null) {
+                  val allRequests = skillRepo.getAllRequestsForProvider(currentUserId)
+                  incomingRequests = allRequests.filter { it.status == "PENDING" }
+                  acceptedRequests = allRequests.filter { it.status == "ACCEPTED" }
+                }
+              }
+            }
+          },
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.error
+          )
+        ) {
+          Text("Yes, Reject")
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = { 
+            showRejectDialog = false
+            requestToHandle = null
+          }
+        ) {
+          Text("Cancel")
+        }
+      }
+    )
+  }
+
+  // Success Dialog (shows after accept/reject)
+  if (showSuccessDialog) {
+    AlertDialog(
+      onDismissRequest = { showSuccessDialog = false },
+      title = { Text("Success") },
+      text = { Text(successMessage) },
+      confirmButton = {
+        Button(onClick = { showSuccessDialog = false }) {
+          Text("OK")
+        }
+      }
+    )
   }
 
   Column(
@@ -174,56 +321,172 @@ fun RequestManagementScreen(
         )
       }
   }
-  else if (incomingRequests.isEmpty()) {
+  else if (incomingRequests.isEmpty() && acceptedRequests.isEmpty()) {
+    // No requests at all
     Box(
       modifier = Modifier.fillMaxSize(),
       contentAlignment = Alignment.Center
     ) {
       Text(
-        text = "No pending requests",
+        text = "No requests yet",
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
     }
   }
-  else { //show requests if there are any
+  else {
+    // Show both sections in a scrollable column
     LazyColumn(
       modifier = Modifier.fillMaxSize(),
       contentPadding = PaddingValues(16.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      items(incomingRequests) { requestWithDetails ->
-        RequestCard(
-          requestWithDetails = requestWithDetails,
-          onAccept = {requestId ->
-            scope.launch {
-              val success = skillRepo.updateRequestStatus(requestId, "ACCEPTED")
-              if (success) {
-                //refresh list
-                val currentUserId = authRepository.getCurrentUserId()
-                if(currentUserId != null) {
-                  val updatedRequests = skillRepo.getRequestsWithDetails(currentUserId)
-                  incomingRequests = updatedRequests
-                }
-              }
-           }
-          },
-          onReject = {requestId ->
-            scope.launch {
-              val success = skillRepo.updateRequestStatus(requestId, "REJECTED")
-              if (success) {
-                //refresh list
-                val currentUserId = authRepository.getCurrentUserId()
-                if(currentUserId != null) {
-                  val updatedRequests = skillRepo.getRequestsWithDetails(currentUserId)
-                  incomingRequests = updatedRequests
-                }
-              }
+      // Section 1: Incoming Requests (Pending)
+      if (incomingRequests.isNotEmpty()) {
+        item {
+          Text(
+            text = "Incoming Requests",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 8.dp)
+          )
+        }
+        
+        items(incomingRequests) { requestWithDetails ->
+          RequestCard(
+            requestWithDetails = requestWithDetails,
+            onAccept = { requestId ->
+              requestToHandle = requestWithDetails
+              showAcceptDialog = true
+            },
+            onReject = { requestId ->
+              requestToHandle = requestWithDetails
+              showRejectDialog = true
             }
-          }
-        )
+          )
+        }
+        
+        // Spacer between sections
+        item {
+          Spacer(modifier = Modifier.height(16.dp))
+        }
+      }
+      
+      // Section 2: Accepted Requests (Active)
+      if (acceptedRequests.isNotEmpty()) {
+        item {
+          Text(
+            text = "Accepted Requests",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 8.dp)
+          )
+          Text(
+            text = "Coordinate with these students",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp)
+          )
+        }
+        
+        items(acceptedRequests) { requestWithDetails ->
+          AcceptedRequestCard(
+            requestWithDetails = requestWithDetails
+          )
+        }
       }
     }
   }
 }
+}
+
+// Card for accepted requests (no accept/reject buttons, shows status)
+@Composable
+fun AcceptedRequestCard(
+  requestWithDetails: RequestWithDetails
+) {
+  Card(
+    modifier = Modifier.fillMaxWidth(),
+    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    colors = CardDefaults.cardColors(
+      containerColor = MaterialTheme.colorScheme.primaryContainer
+    )
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+      ) {
+        Column(
+          modifier = Modifier.weight(1f)
+        ) {
+          Text(
+            text = requestWithDetails.skills?.title ?: "Unknown Skill",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            text = requestWithDetails.users?.name ?: "Unknown User",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+        Text(
+          text = "$${String.format("%.0f", requestWithDetails.price)}/hr",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.primary,
+        )
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+      
+      // Show the original message
+      Text(
+        text = "Message:",
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Spacer(modifier = Modifier.height(4.dp))
+      Text(
+        text = requestWithDetails.message,
+        style = MaterialTheme.typography.bodyMedium,
+      )
+      
+      Spacer(modifier = Modifier.height(12.dp))
+      
+      // Status badge
+      Row(
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(
+          Icons.Default.Check,
+          contentDescription = "Accepted",
+          modifier = Modifier.size(16.dp),
+          tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+          text = "ACCEPTED",
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.primary
+        )
+      }
+      
+      Spacer(modifier = Modifier.height(8.dp))
+      
+      // Info text
+      Text(
+        text = "💡 Coordinate meeting details with the student through app messaging (coming soon) or contact them directly.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+      )
+    }
+  }
 }

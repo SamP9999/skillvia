@@ -22,6 +22,7 @@ import com.skillvia.app.ui.profile.ProfileScreen
 import com.skillvia.app.ui.auth.LoginScreen
 import com.skillvia.app.ui.auth.SignupScreen
 import com.skillvia.app.ui.skills.AddSkillScreen
+import com.skillvia.app.ui.requests.RequestManagementScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -112,12 +113,18 @@ fun SkillviaApp() {
             composable("profile") {
                 ProfileScreen(
                     onBackClick = { navController.popBackStack() },
-                    onAddSkillClick = { navController.navigate("add_skill") }
+                    onAddSkillClick = { navController.navigate("add_skill") },
+                    onManageRequestsClick = { navController.navigate("manage_requests") }
                 )
             }
             composable("add_skill") {
                 AddSkillScreen(
                     onSkillAdded = { navController.popBackStack() },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+            composable("manage_requests") {
+                RequestManagementScreen(
                     onBackClick = { navController.popBackStack() }
                 )
             }
