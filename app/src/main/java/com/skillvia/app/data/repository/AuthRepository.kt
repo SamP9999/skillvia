@@ -85,5 +85,34 @@ class AuthRepository {
     fun isLoggedIn(): Boolean {
         return supabase.auth.currentUserOrNull() != null
     }
+    
+    suspend fun updateUserProfile(
+        userId: String,
+        name: String,
+        university: String,
+        studentId: String,
+        bio: String? = null
+    ): Boolean {
+        return try {
+            supabase.from("users")
+                .update(
+                    {
+                        set("name", name)
+                        set("university", university)
+                        set("student_id", studentId)
+                        set("bio", bio as String?)
+                    }
+                ) {
+                    filter {
+                        eq("id", userId)
+                    }
+                }
+            true
+        } catch (e: Exception) {
+            println("Error updating user profile: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
 }
 

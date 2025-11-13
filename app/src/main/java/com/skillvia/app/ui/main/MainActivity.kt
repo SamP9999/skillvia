@@ -23,6 +23,7 @@ import com.skillvia.app.ui.auth.LoginScreen
 import com.skillvia.app.ui.auth.SignupScreen
 import com.skillvia.app.ui.skills.AddSkillScreen
 import com.skillvia.app.ui.requests.RequestManagementScreen
+import com.skillvia.app.ui.profile.EditProfileScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -110,11 +111,23 @@ fun SkillviaApp() {
                     onBackClick = { navController.popBackStack() }
                 )
             }
-            composable("profile") {
+            composable("profile") { backStackEntry ->
                 ProfileScreen(
                     onBackClick = { navController.popBackStack() },
                     onAddSkillClick = { navController.navigate("add_skill") },
-                    onManageRequestsClick = { navController.navigate("manage_requests") }
+                    onManageRequestsClick = { navController.navigate("manage_requests") },
+                    onEditProfileClick = { navController.navigate("edit_profile") },
+                    refreshTrigger = backStackEntry.savedStateHandle.get<Int>("refresh") ?: 0
+                )
+            }
+            composable("edit_profile") {
+                EditProfileScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onProfileUpdated = {
+                        // Trigger refresh of profile screen
+                        navController.previousBackStackEntry?.savedStateHandle?.set("refresh", System.currentTimeMillis().toInt())
+                        navController.popBackStack()
+                    }
                 )
             }
             composable("add_skill") {

@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -27,6 +27,9 @@ fun RequestCard(
   Card(
     modifier = Modifier.fillMaxWidth(),
     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    colors = CardDefaults.cardColors(
+      containerColor = MaterialTheme.colorScheme.surface
+    )
   ) {
     Column(
       modifier = Modifier.padding(16.dp),
@@ -297,7 +300,7 @@ fun RequestManagementScreen(
       title = {Text("Manage Requests")},
       navigationIcon = {
         IconButton(onClick = onBackClick) {
-          Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
         }
       }
     )

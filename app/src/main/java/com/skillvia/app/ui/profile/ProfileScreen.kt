@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Check
@@ -32,7 +32,9 @@ import androidx.compose.material.icons.filled.List
 fun ProfileScreen(
     onBackClick: () -> Unit,
     onAddSkillClick: () -> Unit,
-    onManageRequestsClick: () -> Unit
+    onManageRequestsClick: () -> Unit,
+    onEditProfileClick: () -> Unit,
+    refreshTrigger: Int = 0 // Trigger to refresh data
 ) {
     val skillRepo = SkillRepo()
     val authRepository = AuthRepository()
@@ -41,8 +43,8 @@ fun ProfileScreen(
     var requestedSkillsWithStatus by remember { mutableStateOf<List<Pair<Skill, SkillRequest>>>(emptyList())}
     val scope = rememberCoroutineScope()
 
-    // Load user data when screen first appears
-    LaunchedEffect(Unit) {
+    // Load user data when screen first appears or when refreshTrigger changes
+    LaunchedEffect(refreshTrigger) {
         scope.launch {
             try {
                 // Get the logged-in user's ID from Supabase Auth
@@ -76,15 +78,6 @@ fun ProfileScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        TopAppBar(
-            title = {Text("My Profile")},
-            navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                }
-            }
-        )
-
         if(currentUser != null) {
             Column(
                 modifier = Modifier
@@ -92,10 +85,29 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                    Text(
+                        text = "My Profile",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 //user info card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface 
+                    )
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -221,12 +233,12 @@ fun ProfileScreen(
                     requestedSkillsWithStatus.forEach { (skill, request) ->
                         // Show different card styles based on status
                         if (request.status == "ACCEPTED") {
-                            // Accepted requests get a special card
+
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                    containerColor = MaterialTheme.colorScheme.surface 
                                 )
                             ) {
                                 Column(
@@ -343,7 +355,7 @@ fun ProfileScreen(
                 //Edit Profile Button
                 Button(
                     onClick = {
-                        //TODO: Navigate to edit profile screen
+                        onEditProfileClick() // Navigate to edit profile screen
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
