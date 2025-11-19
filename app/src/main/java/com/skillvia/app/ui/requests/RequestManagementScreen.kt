@@ -112,7 +112,6 @@ fun RequestCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestManagementScreen(
   onBackClick: () -> Unit
@@ -296,14 +295,6 @@ fun RequestManagementScreen(
   Column(
     modifier = Modifier.fillMaxSize()
   ) {
-    TopAppBar(
-      title = {Text("Manage Requests")},
-      navigationIcon = {
-        IconButton(onClick = onBackClick) {
-          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-        }
-      }
-    )
     if (isLoading) {
       Box(
         modifier = Modifier.fillMaxSize(),
@@ -344,6 +335,24 @@ fun RequestManagementScreen(
       contentPadding = PaddingValues(16.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+      item {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.Start,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          IconButton(onClick = onBackClick) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+          }
+          Text(
+            text = "Manage Requests",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+          )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+      }
+      
       // Section 1: Incoming Requests (Pending)
       if (incomingRequests.isNotEmpty()) {
         item {

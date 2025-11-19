@@ -55,8 +55,7 @@ fun SkillsListScreen(
     val filteredSkills = remember(allSkills, searchQuery, selectedCategory) {
         allSkills.filter { skill ->
             val matchesSearch = searchQuery.isEmpty() || 
-                skill.title.contains(searchQuery, ignoreCase = true) ||
-                skill.description.contains(searchQuery, ignoreCase = true)
+                skill.title.contains(searchQuery, ignoreCase = true)
 
             val matchesCategory = selectedCategory == null || skill.category == selectedCategory?.name
             // skill has to match both search and category

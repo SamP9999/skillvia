@@ -42,20 +42,29 @@ fun AddSkillScreen(
   Column(
     modifier = Modifier.fillMaxSize()
   ) {
-    TopAppBar(
-      title = { Text("Add New Skill")},
-      navigationIcon = { IconButton(onClick = onBackClick) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-        }
-      }
-    )
-
     Column(
       modifier = Modifier
         .fillMaxSize()
         .verticalScroll(rememberScrollState())
         .padding(16.dp)
     ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        IconButton(onClick = onBackClick) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+        }
+        Text(
+          text = "Add New Skill",
+          style = MaterialTheme.typography.headlineMedium,
+          fontWeight = FontWeight.Bold
+        )
+      }
+      
+      Spacer(modifier = Modifier.height(16.dp))
+      
       Text(
         text = "Skill Title",
         style = MaterialTheme.typography.titleMedium,

@@ -44,15 +44,6 @@ fun SkillDetailScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        TopAppBar(
-            title = {Text("Skill Details") },
-            navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }    
-            }
-        )
-
         if (skill != null) {
             Column(
                 modifier = Modifier
@@ -60,6 +51,23 @@ fun SkillDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)   
             ) {
+                // Header with back button and title (matching homepage style)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                    Text(
+                        text = "Skill Details",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -82,7 +90,7 @@ fun SkillDetailScreen(
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
-                        )
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
