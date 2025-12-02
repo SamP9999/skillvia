@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.User
 import com.skillvia.app.data.repository.AuthRepository
+import com.skillvia.app.ui.theme.SkillviaCardDefaults
 import com.skillvia.app.data.repository.SkillRepo
 import kotlinx.coroutines.launch
 
@@ -25,34 +26,26 @@ fun EditProfileScreen(
     val skillRepo = SkillRepo()
     val scope = rememberCoroutineScope()
     
-    // State for user data
     var currentUser by remember { mutableStateOf<User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-    
-    // Form state
     var name by remember { mutableStateOf("") }
     var university by remember { mutableStateOf("") }
     var studentId by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
-    
-    // UI state
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var showSuccessDialog by remember { mutableStateOf(false) }
-    
-    // Load current user data
     LaunchedEffect(Unit) {
         scope.launch {
             try {
                 val userId = authRepository.getCurrentUserId()
                 if (userId != null) {
                     currentUser = skillRepo.getUserById(userId)
-                    // Populate form with current data
                     currentUser?.let { user ->
                         name = user.name
                         university = user.university
                         studentId = user.studentId
-                        bio = user.bio ?: "" // Use empty string if bio is null
+                        bio = user.bio ?: "" 
                     }
                 }
                 isLoading = false
@@ -67,7 +60,6 @@ fun EditProfileScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         if (isLoading) {
-            // Loading indicator
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -75,7 +67,6 @@ fun EditProfileScreen(
                 CircularProgressIndicator()
             }
         } else {
-            // Form content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -89,33 +80,36 @@ fun EditProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                     Text(
                         text = "Edit Profile",
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
-                // Error message
                 if (errorMessage.isNotEmpty()) {
                     Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = SkillviaCardDefaults.Shape,
+                        elevation = SkillviaCardDefaults.elevation(),
+                        colors = SkillviaCardDefaults.colors()
                     ) {
                         Text(
                             text = errorMessage,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(16.dp)
                         )
                     }
                 }
                 
-                // Name field
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -125,7 +119,6 @@ fun EditProfileScreen(
                     enabled = !isSaving
                 )
                 
-                // University field (read-only for now, since it's UNB-only)
                 OutlinedTextField(
                     value = university,
                     onValueChange = { }, // Disabled - university is fixed
@@ -140,7 +133,6 @@ fun EditProfileScreen(
                     )
                 )
                 
-                // Student ID field
                 OutlinedTextField(
                     value = studentId,
                     onValueChange = { studentId = it },
@@ -150,7 +142,6 @@ fun EditProfileScreen(
                     enabled = !isSaving
                 )
                 
-                // Bio field (multi-line)
                 OutlinedTextField(
                     value = bio,
                     onValueChange = { bio = it },
@@ -164,7 +155,6 @@ fun EditProfileScreen(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Save button
                 Button(
                     onClick = {
                         if (name.isBlank()) {
@@ -183,7 +173,6 @@ fun EditProfileScreen(
                             try {
                                 val userId = authRepository.getCurrentUserId()
                                 if (userId != null) {
-                                    // Update user profile in Supabase
                                     val success = authRepository.updateUserProfile(
                                         userId = userId,
                                         name = name,
@@ -224,7 +213,6 @@ fun EditProfileScreen(
         }
     }
     
-    // Success dialog
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { },
@@ -235,7 +223,7 @@ fun EditProfileScreen(
                     onClick = {
                         showSuccessDialog = false
                         onProfileUpdated() // Refresh profile screen
-                        onBackClick() // Navigate back
+                        onBackClick() 
                     }
                 ) {
                     Text("OK")

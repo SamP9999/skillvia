@@ -58,7 +58,6 @@ fun SkillsListScreen(
                 skill.title.contains(searchQuery, ignoreCase = true)
 
             val matchesCategory = selectedCategory == null || skill.category == selectedCategory?.name
-            // skill has to match both search and category
             matchesSearch && matchesCategory
         }
     }
@@ -68,7 +67,6 @@ fun SkillsListScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -77,21 +75,29 @@ fun SkillsListScreen(
             Text(
                 text = "Skillvia",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
             Row {
                 IconButton(onClick = onProfileClick) {
-                    Icon(Icons.Default.Person, contentDescription = "Profile")
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
                 IconButton(onClick = { showLogoutDialog = true }) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+                    Icon(
+                        Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Logout",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
 
-        //Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it},
@@ -111,7 +117,6 @@ fun SkillsListScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        //Category Filter Chips
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -124,7 +129,6 @@ fun SkillsListScreen(
                 )
             }
             item {
-                //academic filter
                 FilterChip(
                     selected = selectedCategory == SkillCategory.ACADEMIC,
                     onClick = { selectedCategory = SkillCategory.ACADEMIC},
@@ -132,7 +136,6 @@ fun SkillsListScreen(
                 )
             }
             item {
-                // Technology category chip
                 FilterChip(
                     selected = selectedCategory == SkillCategory.TECHNOLOGY,
                     onClick = { selectedCategory = SkillCategory.TECHNOLOGY },
@@ -140,7 +143,6 @@ fun SkillsListScreen(
                 )
             }
             item {
-                // Creative Arts category chip
                 FilterChip(
                     selected = selectedCategory == SkillCategory.CREATIVE_ARTS,
                     onClick = { selectedCategory = SkillCategory.CREATIVE_ARTS },
@@ -148,7 +150,6 @@ fun SkillsListScreen(
                 )
             }
             item {
-                // Fitness & Lifestyle category chip
                 FilterChip(
                     selected = selectedCategory == SkillCategory.FITNESS_LIFESTYLE,
                     onClick = { selectedCategory = SkillCategory.FITNESS_LIFESTYLE },
@@ -156,7 +157,6 @@ fun SkillsListScreen(
                 )
             }
             item {
-                // Life Skills category chip
                 FilterChip(
                     selected = selectedCategory == SkillCategory.LIFE_SKILLS,
                     onClick = { selectedCategory = SkillCategory.LIFE_SKILLS },
@@ -167,9 +167,7 @@ fun SkillsListScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Skills List
         if (filteredSkills.isEmpty()) {
-            // Show message when no skills match the filters
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center 
@@ -185,7 +183,6 @@ fun SkillsListScreen(
                 )
             }
         } else {
-            // Display filtered skills list
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -198,7 +195,6 @@ fun SkillsListScreen(
             }
         }
     }
-    // Logout Confirmation Dialog
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },

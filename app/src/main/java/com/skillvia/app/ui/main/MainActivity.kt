@@ -1,6 +1,7 @@
 package com.skillvia.app.ui.main
 
 import android.os.Bundle
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,9 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.skillvia.app.ui.theme.SkillviaTheme
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.skillvia.app.ui.skills.SkillsListScreen
 import com.skillvia.app.ui.skills.SkillDetailScreen
 import com.skillvia.app.ui.skills.AddSkillRequestScreen
@@ -22,6 +25,8 @@ import com.skillvia.app.ui.profile.ProfileScreen
 import com.skillvia.app.ui.auth.LoginScreen
 import com.skillvia.app.ui.auth.SignupScreen
 import com.skillvia.app.ui.skills.AddSkillScreen
+import com.skillvia.app.ui.skills.EditSkillScreen
+import com.skillvia.app.ui.skills.MapViewScreen
 import com.skillvia.app.ui.requests.RequestManagementScreen
 import com.skillvia.app.ui.profile.EditProfileScreen
 
@@ -100,6 +105,33 @@ fun SkillviaApp() {
                 SkillDetailScreen(
                     skillId = skillId,
                     onRequestSkill =  { skillId: String -> navController.navigate("add_request/$skillId") },
+                    onBackClick = { navController.popBackStack() },
+                    onViewMap = { locationName, latitude, longitude ->
+                        // Encode values for safe navigation arguments
+                        val encodedLocation = Uri.encode(locationName)
+                        val latParam = latitude?.toString() ?: ""
+                        val lngParam = longitude?.toString() ?: ""
+                        navController.navigate("map_view?loc=$encodedLocation&lat=$latParam&lng=$lngParam")
+                    }
+                )
+            }
+            composable(
+                route = "map_view?loc={loc}&lat={lat}&lng={lng}",
+                arguments = listOf(
+                    navArgument("loc") { type = NavType.StringType; nullable = true; defaultValue = "" },
+                    navArgument("lat") { type = NavType.StringType; nullable = true; defaultValue = "" },
+                    navArgument("lng") { type = NavType.StringType; nullable = true; defaultValue = "" }
+                )
+            ) { backStackEntry ->
+                val args = backStackEntry.arguments
+                val locationName = args?.getString("loc")?.let { Uri.decode(it) } ?: ""
+                val latitude = args?.getString("lat")?.toDoubleOrNull()
+                val longitude = args?.getString("lng")?.toDoubleOrNull()
+                
+                MapViewScreen(
+                    locationName = locationName,
+                    latitude = latitude,
+                    longitude = longitude,
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -117,6 +149,9 @@ fun SkillviaApp() {
                     onAddSkillClick = { navController.navigate("add_skill") },
                     onManageRequestsClick = { navController.navigate("manage_requests") },
                     onEditProfileClick = { navController.navigate("edit_profile") },
+                    onEditSkillClick = { skillId ->
+                        navController.navigate("edit_skill/$skillId")
+                    },
                     refreshTrigger = backStackEntry.savedStateHandle.get<Int>("refresh") ?: 0
                 )
             }
@@ -124,7 +159,6 @@ fun SkillviaApp() {
                 EditProfileScreen(
                     onBackClick = { navController.popBackStack() },
                     onProfileUpdated = {
-                        // Trigger refresh of profile screen
                         navController.previousBackStackEntry?.savedStateHandle?.set("refresh", System.currentTimeMillis().toInt())
                         navController.popBackStack()
                     }
@@ -133,6 +167,17 @@ fun SkillviaApp() {
             composable("add_skill") {
                 AddSkillScreen(
                     onSkillAdded = { navController.popBackStack() },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+            composable("edit_skill/{skillId}") { backStackEntry ->
+                val skillId = backStackEntry.arguments?.getString("skillId") ?: ""
+                EditSkillScreen(
+                    skillId = skillId,
+                    onSkillUpdated = {
+                        navController.previousBackStackEntry?.savedStateHandle?.set("refresh", System.currentTimeMillis().toInt())
+                        navController.popBackStack()
+                    },
                     onBackClick = { navController.popBackStack() }
                 )
             }

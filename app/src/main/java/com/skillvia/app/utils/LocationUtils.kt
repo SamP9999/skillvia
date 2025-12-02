@@ -4,13 +4,12 @@ import kotlin.math.*
 
 object LocationUtils {
 
-    // Convert degrees to radians
     private fun toRadians(degrees: Double): Double {
         return degrees * PI / 180.0
     }
-    // calculate distance between two points
+    
     fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val earthRadius = 6371.0 // Earth's radius in kilometers
+        val earthRadius = 6371.0 
 
         val dLat = toRadians(lat2 - lat1)
         val dLon = toRadians(lon2 - lon1)

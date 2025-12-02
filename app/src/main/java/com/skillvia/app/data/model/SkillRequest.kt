@@ -27,6 +27,8 @@ data class SkillRequest(
     @SerialName("meeting_time")
     val meetingTime: String? = null,
     val price: Double = 0.0,
+    @SerialName("delivery_preference")
+    val deliveryPreference: String? = null,
     @SerialName("requester_rating")
     val requesterRating: Int? = null,
     @SerialName("provider_rating")

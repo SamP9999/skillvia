@@ -2,7 +2,7 @@ package com.skillvia.app.data.model
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
-//Data class for efficient request fetching with joins
+
 @Serializable
 data class RequestWithDetails(
     val id: String? = null,

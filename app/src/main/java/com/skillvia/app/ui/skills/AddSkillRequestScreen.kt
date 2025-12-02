@@ -2,6 +2,8 @@ package com.skillvia.app.ui.skills
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,6 +20,9 @@ import com.skillvia.app.data.model.RequestStatus
 import com.skillvia.app.data.model.User
 import com.skillvia.app.data.repository.AuthRepository
 import com.skillvia.app.data.repository.SkillRepo
+import com.skillvia.app.ui.common.rememberUserLocationState
+import com.skillvia.app.ui.theme.SkillviaCardDefaults
+import com.skillvia.app.utils.LocationUtils
 import kotlinx.coroutines.launch
 
 @Composable
@@ -28,18 +33,30 @@ fun AddSkillRequestScreen(
 ) {
    val skillRepo = SkillRepo()
    val authRepository = AuthRepository()
+   val userLocationState = rememberUserLocationState()
    var skill by remember { mutableStateOf<Skill?>(null)}
    var provider by remember { mutableStateOf<User?>(null)}
    var requestMessage by remember { mutableStateOf("")}
+   var deliveryPreference by remember { mutableStateOf<String?>(null) } // "ONLINE" or "IN_PERSON"
    var isLoading by remember { mutableStateOf(false)}
    var errorMessage by remember { mutableStateOf("")}
    var showSuccessDialog by remember { mutableStateOf(false) }
    val scope = rememberCoroutineScope()
+   
+   LaunchedEffect(skill) {
+       skill?.let { s ->
+           val deliveryType = (s.deliveryType?.trim() ?: "BOTH").uppercase()
+           deliveryPreference = when (deliveryType) {
+               "ONLINE" -> "ONLINE"
+               "IN_PERSON" -> "IN_PERSON"
+               else -> null // "BOTH" - user will choose
+           }
+       }
+   }
 
-   LaunchedEffect(skillId) { //load skill data when screen opens
+   LaunchedEffect(skillId) {
     scope.launch {
         skill = skillRepo.getSkillById(skillId)
-        // Fetch provider information
         if (skill != null) {
             provider = skillRepo.getUserById(skill!!.providerID)
         }
@@ -50,6 +67,15 @@ fun AddSkillRequestScreen(
     modifier = Modifier.fillMaxSize()
    ) {
     if (skill != null) {
+        val skillLatitude = skill!!.latitude?.toDouble()
+        val skillLongitude = skill!!.longitude?.toDouble()
+        val userLat = userLocationState.latitude
+        val userLng = userLocationState.longitude
+        val distanceText = if (skillLatitude != null && skillLongitude != null && userLat != null && userLng != null) {
+            val distanceKm = LocationUtils.calculateDistance(userLat, userLng, skillLatitude, skillLongitude)
+            LocationUtils.formatDistance(distanceKm)
+        } else null
+
         Column(
             modifier = Modifier
             .fillMaxSize()
@@ -62,20 +88,26 @@ fun AddSkillRequestScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
                 Text(
                     text = "Request Skill",
                     style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            //skill summary card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                shape = SkillviaCardDefaults.Shape,
+                elevation = SkillviaCardDefaults.elevation(),
+                colors = SkillviaCardDefaults.colors()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -119,12 +151,49 @@ fun AddSkillRequestScreen(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
+
+                    if (skill!!.location.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Location: ${skill!!.location}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    if (skillLatitude != null && skillLongitude != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        when {
+                            distanceText != null -> {
+                                Text(
+                                    text = "Distance from you: $distanceText",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            !userLocationState.hasPermission -> {
+                                TextButton(onClick = userLocationState.requestPermission) {
+                                    Text("Enable location to see distance")
+                                }
+                            }
+                            userLocationState.isLoading -> {
+                                LinearProgressIndicator(
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            else -> {
+                                Text(
+                                    text = "Distance unavailable.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            //Request Message Section
             Text(
                 text = "Request Message",
                 style = MaterialTheme.typography.titleMedium,
@@ -152,9 +221,64 @@ fun AddSkillRequestScreen(
                 minLines = 3 // might change, test this later
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            skill?.let { s ->
+                val deliveryType = (s.deliveryType?.trim() ?: "BOTH").uppercase()
+                if (deliveryType == "BOTH") {
+                    Text(
+                        text = "Delivery Preference",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectableGroup()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = deliveryPreference == "ONLINE",
+                                onClick = { deliveryPreference = "ONLINE" }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Online",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = deliveryPreference == "IN_PERSON",
+                                onClick = { deliveryPreference = "IN_PERSON" }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "In-Person",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
 
-            // Error Message
+            Spacer(modifier = Modifier.height(8.dp))
+
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
@@ -164,33 +288,30 @@ fun AddSkillRequestScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Submit Button
             Button(
                 onClick = {
                     scope.launch {
                         isLoading = true
                         errorMessage = ""
                         
-                        // Get current user ID
                         val userId = authRepository.getCurrentUserId()
                         
                         if (userId == null) {
                             errorMessage = "You must be logged in to request a skill"
                             isLoading = false
-                            return@launch //stop execution if user not logged in
+                            return@launch
                         }
                         
-                        // Create skill request
                         val request = SkillRequest(
                             skillId = skillId,
                             requesterId = userId,
                             providerId = skill!!.providerID,
                             message = requestMessage,
                             status = "PENDING",
-                            price = skill!!.price
+                            price = skill!!.price,
+                            deliveryPreference = deliveryPreference
                         )
                         
-                        // Save to Supabase
                         val result = skillRepo.createRequest(request)
                         isLoading = false
                         
@@ -235,7 +356,6 @@ fun AddSkillRequestScreen(
         }
     }
 
-    // Success Dialog
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },

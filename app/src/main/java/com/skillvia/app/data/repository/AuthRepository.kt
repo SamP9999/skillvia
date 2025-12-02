@@ -7,15 +7,7 @@ import io.github.jan.supabase.postgrest.from
 
 class AuthRepository {
     private val supabase = SupabaseClient.client
-    
-    // TODO: PRODUCTION - Re-enable email confirmation in Supabase Dashboard
-    // Currently disabled for demo/development purposes
-    // Steps to re-enable:
-    // 1. Go to: Supabase Dashboard > Authentication > Providers > Email
-    // 2. Turn ON "Confirm email"
-    // 3. Implement email verification UI flow
-    // 4. Update signUp() to handle unverified users gracefully
-    
+
     suspend fun signUp(
         email: String,
         password: String,
@@ -34,7 +26,6 @@ class AuthRepository {
             val userId = supabase.auth.currentUserOrNull()?.id 
                 ?: throw Exception("User ID not found after signup")
             
-            // Create user profile in users table
             supabase.from("users").insert(mapOf(
                 "id" to userId,
                 "email" to email,
@@ -54,13 +45,11 @@ class AuthRepository {
         password: String
     ): Result<String> {
         return try {
-            // Sign in with Supabase Auth
             supabase.auth.signInWith(Email) {
                 this.email = email
                 this.password = password
             }
             
-            // Get the user ID
             val userId = supabase.auth.currentUserOrNull()?.id 
                 ?: throw Exception("User ID not found after login")
             
@@ -109,7 +98,6 @@ class AuthRepository {
                 }
             true
         } catch (e: Exception) {
-            println("Error updating user profile: ${e.message}")
             e.printStackTrace()
             false
         }

@@ -2,14 +2,20 @@ package com.skillvia.app.ui.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import com.skillvia.app.data.repository.AuthRepository
 
@@ -27,9 +33,6 @@ fun SignupScreen(
     
     // UNB-only for MVP (fixed value)
     val university = "University of New Brunswick"
-    
-    // TODO: For multi-university expansion, uncomment below and remove the fixed university above:
-    // var selectedUniversity by remember { mutableStateOf("") }
     // val universities = listOf(
     //     "University of New Brunswick",
     //     "Dalhousie University",
@@ -62,12 +65,17 @@ fun SignupScreen(
             fontWeight = FontWeight.Bold
         )
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "Join Skillvia to learn and teach",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            text = "Teach what you know. Learn what you don't.",
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
         
         Spacer(modifier = Modifier.height(32.dp))
@@ -116,39 +124,6 @@ fun SignupScreen(
             singleLine = true,
             enabled = false
         )
-        
-        // TODO: For multi-university expansion, replace above OutlinedTextField with dropdown:
-        // var expanded by remember { mutableStateOf(false) }
-        // ExposedDropdownMenuBox(
-        //     expanded = expanded,
-        //     onExpandedChange = { expanded = !expanded }
-        // ) {
-        //     OutlinedTextField(
-        //         value = selectedUniversity,
-        //         onValueChange = { },
-        //         readOnly = true,
-        //         label = { Text("University") },
-        //         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        //         modifier = Modifier
-        //             .fillMaxWidth()
-        //             .menuAnchor(),
-        //         enabled = !isLoading
-        //     )
-        //     ExposedDropdownMenu(
-        //         expanded = expanded,
-        //         onDismissRequest = { expanded = false }
-        //     ) {
-        //         universities.forEach { uni ->
-        //             DropdownMenuItem(
-        //                 text = { Text(uni) },
-        //                 onClick = {
-        //                     selectedUniversity = uni
-        //                     expanded = false
-        //                 }
-        //             )
-        //         }
-        //     }
-        // }
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -213,33 +188,6 @@ fun SignupScreen(
                       }
                     }
                   }
-                
-                // TODO: For multi-university expansion, replace above validation with:
-                // when {
-                //     name.isBlank() -> errorMessage = "Please enter your name"
-                //     email.isBlank() -> errorMessage = "Please enter your email"
-                //     selectedUniversity.isBlank() -> errorMessage = "Please select your university"
-                //     else -> {
-                //         val expectedDomain = universityToEmailDomain[selectedUniversity]
-                //         when {
-                //             expectedDomain == null -> errorMessage = "Invalid university selected"
-                //             !email.endsWith(expectedDomain) -> errorMessage = "Email must match your university domain ($expectedDomain)"
-                //             studentId.isBlank() -> errorMessage = "Please enter your student ID"
-                //             password.isBlank() -> errorMessage = "Please enter a password"
-                //             password.length < 6 -> errorMessage = "Password must be at least 6 characters"
-                //             password != confirmPassword -> errorMessage = "Passwords don't match"
-                //             else -> {
-                //                 errorMessage = ""
-                //                 isLoading = true
-                //                 scope.launch {
-                //                     kotlinx.coroutines.delay(1500)
-                //                     isLoading = false
-                //                     onSignupSuccess()
-                //                 }
-                //             }
-                //         }
-                //     }
-                // }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
@@ -259,15 +207,33 @@ fun SignupScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        TextButton(
-            onClick = onNavigateToLogin,
-            enabled = !isLoading
-        ) {
-            Text(
-                text = "Already have an account? Login",
-                style = MaterialTheme.typography.bodyMedium
-            )
+        val annotatedText = buildAnnotatedString {
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                append("Already have an account? ")
+            }
+            pushStringAnnotation(tag = "LOGIN", annotation = "LOGIN")
+            withStyle(
+                SpanStyle(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+            ) {
+                append("Login")
+            }
+            pop()
         }
+        
+        ClickableText(
+            text = annotatedText,
+            style = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center),
+            onClick = { offset ->
+                annotatedText.getStringAnnotations("LOGIN", offset, offset)
+                    .firstOrNull()?.let {
+                        if (!isLoading) onNavigateToLogin()
+                    }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
         
         Spacer(modifier = Modifier.height(32.dp))
     }

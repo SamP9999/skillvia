@@ -7,6 +7,7 @@ import com.skillvia.app.data.model.RequestStatus
 import com.skillvia.app.data.model.RequestWithDetails
 import com.skillvia.app.data.model.SkillInfo
 import com.skillvia.app.data.model.UserInfo
+import com.skillvia.app.data.model.Review
 import com.skillvia.app.data.supabase.SupabaseClient
 import com.skillvia.app.utils.LocationUtils
 import io.github.jan.supabase.postgrest.from
@@ -15,7 +16,6 @@ import kotlinx.serialization.SerialName
 
 class SkillRepo {
     private val supabase = SupabaseClient.client
-    // Sample skills data
     private val sampleSkills = listOf(
         Skill(
             id = "550e8400-e29b-41d4-a716-446655440001",
@@ -26,8 +26,8 @@ class SkillRepo {
             providerID = "550e8400-e29b-41d4-a716-446655440011",
             providerName = "Alex Johnson",
             location = "UNB Campus Library",
-            latitude = 45.9636,
-            longitude = -66.6431,
+            latitude = 45.9636f,
+            longitude = -66.6431f,
             rating = 4.8f,
             totalRatings = 23,
             createdAt = "2025-01-16T10:00:00Z",
@@ -42,8 +42,8 @@ class SkillRepo {
             providerID = "550e8400-e29b-41d4-a716-446655440012",
             providerName = "Sarah Chen",
             location = "UNB Music Building",
-            latitude = 45.9640,
-            longitude = -66.6425,
+            latitude = 45.9640f,
+            longitude = -66.6425f,
             rating = 4.9f,
             totalRatings = 15,
             createdAt = "2025-01-13T14:30:00Z",
@@ -74,8 +74,8 @@ class SkillRepo {
             providerID = "550e8400-e29b-41d4-a716-446655440014",
             providerName = "Emma Thompson",
             location = "UNB Computer Science Building",
-            latitude = 45.9630,
-            longitude = -66.6435,
+            latitude = 45.9630f,
+            longitude = -66.6435f,
             rating = 4.6f,
             totalRatings = 19,
             createdAt = "2025-01-15T11:00:00Z",
@@ -90,8 +90,8 @@ class SkillRepo {
             providerID = "550e8400-e29b-41d4-a716-446655440015",
             providerName = "David Kim",
             location = "UNB Fitness Center",
-            latitude = 45.9645,
-            longitude = -66.6420,
+            latitude = 45.9645f,
+            longitude = -66.6420f,
             rating = 4.5f,
             totalRatings = 12,
             createdAt = "2025-01-11T16:45:00Z",
@@ -105,8 +105,8 @@ class SkillRepo {
             price = 16.0,
             providerID = "user_006",
             location = "UNB English Department",
-            latitude = 45.9632,
-            longitude = -66.6430,
+            latitude = 45.9632f,
+            longitude = -66.6430f,
             rating = 4.9f,
             totalRatings = 27,
             createdAt = "2025-01-14T13:20:00Z",
@@ -120,8 +120,8 @@ class SkillRepo {
             price = 20.0,
             providerID = "user_007",
             location = "Downtown Fredericton",
-            latitude = 45.9650,
-            longitude = -66.6415,
+            latitude = 45.9650f,
+            longitude = -66.6415f,
             rating = 4.4f,
             totalRatings = 8,
             createdAt = "2025-01-12T08:30:00Z",
@@ -206,27 +206,21 @@ class SkillRepo {
     // Repository methods
     suspend fun getAllSkills(): List<Skill> {
         return try {
-            // Fetch skills from Supabase
             val skills = supabase.from("skills")
                 .select()
                 .decodeList<Skill>()
             
-            // Fetch all users to populate provider names
             val users = supabase.from("users")
                 .select()
-                .decodeList<User>()
-            
-            // Create a map of user IDs to names for quick lookup
+                .decodeList<User>() 
             val userMap = users.associateBy { it.id }
             
-            // Populate provider names and convert category string to enum
             val skillsWithProviders = skills.map { skill ->
                 skill.copy(providerName = userMap[skill.providerID]?.name)
             }
             
             skillsWithProviders.filter { it.isActive }
         } catch (e: Exception) {
-            println("Error fetching skills from Supabase: ${e.message}")
             e.printStackTrace()
             // Fallback to sample data if Supabase fails
             sampleSkills.filter { it.isActive }
@@ -235,43 +229,35 @@ class SkillRepo {
 
     suspend fun getSkillsByCategory(category: SkillCategory): List<Skill> {
         return try {
-            // Fetch all skills from Supabase and filter by category
             val skills = supabase.from("skills")
                 .select()
                 .decodeList<Skill>()
             skills.filter { it.category == category.name && it.isActive }
         } catch (e: Exception) {
-            println("Error fetching skills by category from Supabase: ${e.message}")
             e.printStackTrace()
-            // Fallback to sample data if Supabase fails
             sampleSkills.filter { it.category == category.name && it.isActive }
         }
     }
 
     suspend fun getSkillById(id: String): Skill? {
         return try {
-            // Fetch all skills from Supabase and find by ID
             val skills = supabase.from("skills")
                 .select()
                 .decodeList<Skill>()
             
             skills.find { it.id == id }
         } catch (e: Exception) {
-            println("Error fetching skill from Supabase: ${e.message}")
             e.printStackTrace()
-            // Fallback to sample data if Supabase fails
             sampleSkills.find { it.id == id }
         }
     }
 
     suspend fun searchSkills(query: String): List<Skill> {
         return try {
-            // Fetch all skills from Supabase and filter by search query
             val skills = supabase.from("skills")
                 .select()
                 .decodeList<Skill>()
             
-            // Filter by search query in Kotlin
             skills.filter { skill ->
                 skill.isActive && (
                     skill.title.contains(query, ignoreCase = true) ||
@@ -279,9 +265,7 @@ class SkillRepo {
                 )
             }
         } catch (e: Exception) {
-            println("Error searching skills from Supabase: ${e.message}")
             e.printStackTrace()
-            // Fallback to sample data if Supabase fails
             sampleSkills.filter { skill ->
                 skill.isActive && (
                     skill.title.contains(query, ignoreCase = true) ||
@@ -293,37 +277,31 @@ class SkillRepo {
 
     suspend fun getSkillsNearLocation(latitude: Double, longitude: Double, radiusKm: Double): List<Skill> {
         return try {
-            // Fetch all skills from Supabase and filter by location
             val skills = supabase.from("skills")
                 .select()
                 .decodeList<Skill>()
             
-            // Filter by distance in Kotlin
             skills.filter { skill ->
                 skill.isActive && skill.latitude != null && skill.longitude != null &&
-                LocationUtils.calculateDistance(latitude, longitude, skill.latitude, skill.longitude) <= radiusKm
+                LocationUtils.calculateDistance(latitude, longitude, skill.latitude!!.toDouble(), skill.longitude!!.toDouble()) <= radiusKm
             }
         } catch (e: Exception) {
-            println("Error fetching skills near location from Supabase: ${e.message}")
             e.printStackTrace()
-            // Fallback to sample data if Supabase fails
             sampleSkills.filter { skill ->
                 skill.isActive && skill.latitude != null && skill.longitude != null &&
-                LocationUtils.calculateDistance(latitude, longitude, skill.latitude, skill.longitude) <= radiusKm
+                LocationUtils.calculateDistance(latitude, longitude, skill.latitude!!.toDouble(), skill.longitude!!.toDouble()) <= radiusKm
             }
         }
     }
 
     suspend fun getUserById(id: String): User? {
         return try {
-            // Fetch user from Supabase only
             val users = supabase.from("users")
                 .select()
                 .decodeList<User>()
             
             users.find { it.id == id }
         } catch (e: Exception) {
-            println("Error fetching user from Supabase: ${e.message}")
             e.printStackTrace()
             null
         }
@@ -331,32 +309,26 @@ class SkillRepo {
 
     suspend fun getAllRequests(): List<SkillRequest> {
         return try {
-            // Fetch skill requests from Supabase
             val requests = supabase.from("skill_requests")
                 .select()
                 .decodeList<SkillRequest>()
             
-            requests // try returns its last value
+            requests 
         } catch (e: Exception) {
-            println("Error fetching skill requests from Supabase: ${e.message}")
             e.printStackTrace()
-            // Fallback to sample data if Supabase fails
             sampleRequests
         }
     }
 
     suspend fun getRequestsByUserId(userId: String): List<SkillRequest> {
         return try {
-            // Fetch all skill requests from Supabase and filter by user ID
             val requests = supabase.from("skill_requests")
                 .select()
                 .decodeList<SkillRequest>()
             
             requests.filter { it.requesterId == userId || it.providerId == userId }
         } catch (e: Exception) {
-            println("Error fetching requests by user ID from Supabase: ${e.message}")
             e.printStackTrace()
-            // Fallback to sample data if Supabase fails
             sampleRequests.filter {
                 it.requesterId == userId || it.providerId == userId
             }
@@ -365,11 +337,9 @@ class SkillRepo {
 
     suspend fun createRequest(request: SkillRequest): Result<SkillRequest> {
         return try {
-            // Insert request into Supabase
             supabase.from("skill_requests").insert(request)
             Result.success(request)
         } catch (e: Exception) {
-            println("Error creating skill request: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }
@@ -380,18 +350,15 @@ class SkillRepo {
             supabase.from("skill_requests")
                 .update(
                     {
-                        set("status", status) // Set the new status value
+                        set("status", status)
                     }
                 ) {
                     filter {
-                        eq("id", requestId) // Filter to only update this specific request
+                        eq("id", requestId) 
                     }
                 }
-            
-            println("Request $requestId status updated to $status")
             true
         } catch (e: Exception) {
-            println("Error updating request status: ${e.message}")
             e.printStackTrace()
             false
         }
@@ -399,8 +366,7 @@ class SkillRepo {
 
     suspend fun addSkill(skill: Skill): Result<Skill> {
         return try {
-            // Create a serializable data class for inserting into Supabase
-            @Serializable
+         @Serializable
             data class SkillInsert(
                 val title: String,
                 val description: String,
@@ -409,8 +375,10 @@ class SkillRepo {
                 @SerialName("provider_id")
                 val providerId: String,
                 val location: String,
-                val latitude: Double? = null,
-                val longitude: Double? = null,
+                val latitude: Float? = null,
+                val longitude: Float? = null,
+                @SerialName("delivery_type")
+                val deliveryType: String = "BOTH",  
                 val rating: Float = 0.0f,
                 @SerialName("total_ratings")
                 val totalRatings: Int = 0,
@@ -418,7 +386,7 @@ class SkillRepo {
                 val isActive: Boolean = true
             )
             
-            val skillData = SkillInsert(
+                val skillData = SkillInsert(
                 title = skill.title,
                 description = skill.description,
                 category = skill.category,
@@ -427,6 +395,7 @@ class SkillRepo {
                 location = skill.location,
                 latitude = skill.latitude,
                 longitude = skill.longitude,
+                deliveryType = skill.deliveryType, 
                 rating = skill.rating,
                 totalRatings = skill.totalRatings,
                 isActive = skill.isActive
@@ -437,7 +406,6 @@ class SkillRepo {
             
             Result.success(skill)
         } catch (e: Exception) {
-            println("Error adding skill: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }
@@ -445,32 +413,88 @@ class SkillRepo {
 
     suspend fun updateSkill(skill: Skill): Result<Skill> {
         return try {
-            // For now, just return success since update functionality is complex
-            // In a real app, you'd update the database here
+            if (skill.id.isEmpty()) {
+                return Result.failure(Exception("Skill ID is required"))
+            }
+            
+            @Serializable
+            data class SkillUpdate(
+                val title: String,
+                val description: String,
+                val category: String,
+                val price: Double,
+                val location: String,
+                val latitude: Float?,
+                val longitude: Float?,
+                @SerialName("delivery_type")
+                val deliveryType: String
+            )
+            
+            val updateData = SkillUpdate(
+                title = skill.title,
+                description = skill.description,
+                category = skill.category,
+                price = skill.price,
+                location = skill.location,
+                latitude = skill.latitude,
+                longitude = skill.longitude,
+                deliveryType = skill.deliveryType
+            )
+            
+            supabase.from("skills")
+                .update(updateData) {
+                    filter {
+                        eq("id", skill.id)
+                    }
+                }
+            
             Result.success(skill)
         } catch (e: Exception) {
-            println("Error updating skill: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }
     }
 
+    suspend fun hasActiveRequests(skillId: String): Boolean {
+        return try {
+            val requests = supabase.from("skill_requests")
+                .select()
+                .decodeList<SkillRequest>()
+            
+            requests.any { 
+                it.skillId == skillId && 
+                (it.status == "PENDING" || it.status == "ACCEPTED" || it.status == "IN_PROGRESS")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            true
+        }
+    }
+
     suspend fun deleteSkill(id: String): Result<Boolean> {
         return try {
-            // For now, just return success since delete functionality is complex
-            // In a real app, you'd delete from the database here
+            if (id.isEmpty()) {
+                return Result.failure(Exception("Skill ID is required"))
+            }
+            
+            if (hasActiveRequests(id)) {
+                return Result.failure(Exception("Cannot delete skill with active requests. Please wait for all requests to be completed or rejected."))
+            }
+            supabase.from("skills")
+                .delete {
+                    filter {
+                        eq("id", id)
+                    }
+                }
+            
             Result.success(true)
         } catch (e: Exception) {
-            println("Error deleting skill: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }
     }
-    // Fetch requests with skill titles and requester names (PENDING only)
     suspend fun getRequestsWithDetails(providerId: String): List<RequestWithDetails> {
         return try {
-            // For now, fetch all requests and filter in Kotlin
-            // TODO: Implement proper Supabase joins later
             val allRequests = supabase.from("skill_requests")
                 .select()
                 .decodeList<SkillRequest>()
@@ -483,12 +507,10 @@ class SkillRepo {
                 .select()
                 .decodeList<User>()
             
-            // Filter requests for this provider
             val filteredRequests = allRequests.filter { 
                 it.providerId == providerId && it.status == "PENDING" 
             }
             
-            // Convert to RequestWithDetails format
             filteredRequests.map { request ->
                 val skill = allSkills.find { it.id == request.skillId }
                 val user = allUsers.find { it.id == request.requesterId }
@@ -506,16 +528,13 @@ class SkillRepo {
                 )
             }
         } catch (e: Exception) {
-            println("Error fetching requests with details: ${e.message}")
             e.printStackTrace()
             emptyList()
         }
     }
     
-    // Fetch all requests for a provider (both PENDING and ACCEPTED)
     suspend fun getAllRequestsForProvider(providerId: String): List<RequestWithDetails> {
         return try {
-            // Fetch all data from Supabase
             val allRequests = supabase.from("skill_requests")
                 .select()
                 .decodeList<SkillRequest>()
@@ -528,12 +547,14 @@ class SkillRepo {
                 .select()
                 .decodeList<User>()
             
-            // Filter for this provider's requests (PENDING or ACCEPTED)
             val filteredRequests = allRequests.filter { 
-                it.providerId == providerId && (it.status == "PENDING" || it.status == "ACCEPTED")
+                it.providerId == providerId && (
+                    it.status == "PENDING" ||
+                    it.status == "ACCEPTED" ||
+                    it.status == "COMPLETED"
+                )
             }
             
-            // Convert to RequestWithDetails format
             filteredRequests.map { request ->
                 val skill = allSkills.find { it.id == request.skillId }
                 val user = allUsers.find { it.id == request.requesterId }
@@ -551,8 +572,185 @@ class SkillRepo {
                 )
             }
         } catch (e: Exception) {
-            println("Error fetching all provider requests: ${e.message}")
             e.printStackTrace()
+            emptyList()
+        }
+    }
+    
+    suspend fun submitRating(
+        requestId: String,
+        requesterId: String,
+        providerId: String,
+        skillId: String,
+        rating: Int,
+        comment: String?
+    ): Result<Unit> {
+        return try {
+            val allReviews = supabase.from("reviews")
+                .select()
+                .decodeList<Review>()
+            val existingReviews = allReviews.filter { it.requestId == requestId }
+            
+            if (existingReviews.isNotEmpty()) {
+                return Result.failure(Exception("You have already rated this provider"))
+            }
+            
+            @Serializable
+            data class ReviewInsert(
+                @SerialName("request_id")
+                val requestId: String,
+                @SerialName("requester_id")
+                val requesterId: String,
+                @SerialName("provider_id")
+                val providerId: String,
+                @SerialName("skill_id")
+                val skillId: String,
+                val rating: Int,
+                val comment: String? = null
+            )
+            
+            val reviewData = ReviewInsert(
+                requestId = requestId,
+                requesterId = requesterId,
+                providerId = providerId,
+                skillId = skillId,
+                rating = rating,
+                comment = comment?.takeIf { it.isNotBlank() }
+            )
+            
+            supabase.from("reviews").insert(reviewData)
+            
+            try {
+                updateUserRating(providerId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            
+            try {
+                updateSkillRating(skillId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun updateUserRating(userId: String) {
+        try {
+            val allReviewsRaw = supabase.from("reviews")
+                .select()
+                .decodeList<Review>()
+            val allReviews = allReviewsRaw.filter { it.providerId == userId }
+            
+            if (allReviews.isEmpty()) {
+                supabase.from("users").update(
+                    {
+                        set("rating", 0.0f)
+                        set("total_ratings", 0)
+                    }
+                ) {
+                    filter {
+                        eq("id", userId)
+                    }
+                }
+                return
+            }
+            
+            val averageRating = allReviews.map { review -> review.rating }.average().toFloat()
+            val totalRatings = allReviews.size
+            
+            supabase.from("users").update(
+                {
+                    set("rating", averageRating)
+                    set("total_ratings", totalRatings)
+                }
+            ) {
+                filter {
+                    eq("id", userId)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    
+    private suspend fun updateSkillRating(skillId: String) {
+        try {
+            val allReviewsRaw = supabase.from("reviews")
+                .select()
+                .decodeList<Review>()
+            val allReviews = allReviewsRaw.filter { it.skillId == skillId }
+            
+            val averageRating = if (allReviews.isEmpty()) {
+                0.0f
+            } else {
+                allReviews.map { review -> review.rating }.average().toFloat()
+            }
+            val totalRatings = allReviews.size
+            
+            try {
+                supabase.from("skills").update(
+                    {
+                        set("rating", averageRating)
+                        set("total_ratings", totalRatings)
+                    }
+                ) {
+                    filter {
+                        eq("id", skillId)
+                    }
+                }
+            } catch (updateError: Exception) {
+                updateError.printStackTrace()
+                throw updateError
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    
+    suspend fun recalculateSkillRating(skillId: String): Result<Unit> {
+        return try {
+            updateSkillRating(skillId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun hasRating(requestId: String): Boolean {
+        return try {
+            val allReviews = supabase.from("reviews")
+                .select()
+                .decodeList<Review>()
+            val reviews = allReviews.filter { it.requestId == requestId }
+            reviews.isNotEmpty()
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    suspend fun getReviewsForSkill(skillId: String): List<Review> {
+        return try {
+            val allReviews = supabase.from("reviews")
+                .select()
+                .decodeList<Review>()
+            val filteredReviews = allReviews.filter { it.skillId == skillId }
+                .sortedByDescending { it.createdAt ?: "" }
+            
+            val allUsers = supabase.from("users")
+                .select()
+                .decodeList<User>()
+            val userMap = allUsers.associateBy { it.id }
+            
+            filteredReviews.map { review ->
+                val requesterName = userMap[review.requesterId]?.name
+                review.copy(requesterName = requesterName)
+            }
+        } catch (e: Exception) {
             emptyList()
         }
     }

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.RequestWithDetails
 import com.skillvia.app.data.repository.AuthRepository
 import com.skillvia.app.data.repository.SkillRepo
+import com.skillvia.app.ui.theme.SkillviaCardDefaults
 import kotlinx.coroutines.launch
 
 @Composable
@@ -26,10 +28,9 @@ fun RequestCard(
 ) {
   Card(
     modifier = Modifier.fillMaxWidth(),
-    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-    colors = CardDefaults.cardColors(
-      containerColor = MaterialTheme.colorScheme.surface
-    )
+    shape = SkillviaCardDefaults.Shape,
+    elevation = SkillviaCardDefaults.elevation(),
+    colors = SkillviaCardDefaults.colors()
   ) {
     Column(
       modifier = Modifier.padding(16.dp),
@@ -62,7 +63,6 @@ fun RequestCard(
     }
 
     Spacer(modifier = Modifier.height(12.dp))
-    //request message section
     Text(
       text = "Message:",
       style = MaterialTheme.typography.bodySmall,
@@ -75,7 +75,6 @@ fun RequestCard(
       style = MaterialTheme.typography.bodyMedium,
     )
     Spacer(modifier = Modifier.height(16.dp))
-    //action buttons section
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -95,7 +94,7 @@ fun RequestCard(
         Spacer(modifier = Modifier.width(4.dp))
         Text("Accept")
       }
-       OutlinedButton( // Reject button
+       OutlinedButton(
                     onClick = { onReject(requestWithDetails.id ?: "") }, 
                     modifier = Modifier.weight(1f) 
        ) { 
@@ -119,21 +118,21 @@ fun RequestManagementScreen(
   val skillRepo = SkillRepo()
   val authRepository = AuthRepository()
   
-  // State for requests and UI
   var incomingRequests by remember { mutableStateOf<List<RequestWithDetails>>(emptyList())}
   var acceptedRequests by remember { mutableStateOf<List<RequestWithDetails>>(emptyList())}
+  var completedRequests by remember { mutableStateOf<List<RequestWithDetails>>(emptyList())}
   var isLoading by remember { mutableStateOf(true)}
   var errorMessage by remember { mutableStateOf("")}
   val scope = rememberCoroutineScope()
   
-  // State for confirmation dialogs
   var showAcceptDialog by remember { mutableStateOf(false) }
   var showRejectDialog by remember { mutableStateOf(false) }
+  var showCompleteDialog by remember { mutableStateOf(false) }
   var showSuccessDialog by remember { mutableStateOf(false) }
   var requestToHandle by remember { mutableStateOf<RequestWithDetails?>(null) }
   var successMessage by remember { mutableStateOf("") }
+  var selectedTabIndex by remember { mutableStateOf(0) }
 
-  // Load data when screen first appears
   LaunchedEffect(Unit) {
     scope.launch {
         try {
@@ -144,12 +143,11 @@ fun RequestManagementScreen(
             return@launch
           }
           
-          // Fetch ALL requests for this provider (both pending and accepted)
           val allRequests = skillRepo.getAllRequestsForProvider(currentUserId)
           
-          // Split into two lists based on status
           incomingRequests = allRequests.filter { it.status == "PENDING" }
           acceptedRequests = allRequests.filter { it.status == "ACCEPTED" }
+          completedRequests = allRequests.filter { it.status == "COMPLETED" }
           
           isLoading = false
         } catch (e: Exception){
@@ -159,7 +157,6 @@ fun RequestManagementScreen(
     }
   }
 
-  // Accept Confirmation Dialog
   if (showAcceptDialog && requestToHandle != null) {
     AlertDialog(
       onDismissRequest = { 
@@ -177,25 +174,22 @@ fun RequestManagementScreen(
             val requestId = requestToHandle?.id ?: ""
             val studentName = requestToHandle?.users?.name ?: "the student"
             
-            // Close dialog and clear state first
             showAcceptDialog = false
             val tempRequest = requestToHandle
             requestToHandle = null
             
-            // Then perform the async operation
             scope.launch {
               val success = skillRepo.updateRequestStatus(requestId, "ACCEPTED")
               if (success) {
-                // Show success message
                 successMessage = "Request accepted! You can now coordinate with $studentName."
                 showSuccessDialog = true
                 
-                // Refresh BOTH lists
                 val currentUserId = authRepository.getCurrentUserId()
                 if(currentUserId != null) {
                   val allRequests = skillRepo.getAllRequestsForProvider(currentUserId)
                   incomingRequests = allRequests.filter { it.status == "PENDING" }
                   acceptedRequests = allRequests.filter { it.status == "ACCEPTED" }
+                  completedRequests = allRequests.filter { it.status == "COMPLETED" }
                 }
               }
             }
@@ -217,7 +211,6 @@ fun RequestManagementScreen(
     )
   }
 
-  // Reject Confirmation Dialog
   if (showRejectDialog && requestToHandle != null) {
     AlertDialog(
       onDismissRequest = { 
@@ -231,29 +224,25 @@ fun RequestManagementScreen(
       confirmButton = {
         Button(
           onClick = {
-            // Capture the request details before clearing state
             val requestId = requestToHandle?.id ?: ""
             val studentName = requestToHandle?.users?.name ?: "The student"
             
-            // Close dialog and clear state first
             showRejectDialog = false
             val tempRequest = requestToHandle
             requestToHandle = null
             
-            // Then perform the async operation
             scope.launch {
               val success = skillRepo.updateRequestStatus(requestId, "REJECTED")
               if (success) {
-                // Show success message
                 successMessage = "Request rejected. $studentName has been notified."
                 showSuccessDialog = true
                 
-                // Refresh BOTH lists
                 val currentUserId = authRepository.getCurrentUserId()
                 if(currentUserId != null) {
                   val allRequests = skillRepo.getAllRequestsForProvider(currentUserId)
                   incomingRequests = allRequests.filter { it.status == "PENDING" }
                   acceptedRequests = allRequests.filter { it.status == "ACCEPTED" }
+                  completedRequests = allRequests.filter { it.status == "COMPLETED" }
                 }
               }
             }
@@ -278,7 +267,61 @@ fun RequestManagementScreen(
     )
   }
 
-  // Success Dialog (shows after accept/reject)
+  if (showCompleteDialog && requestToHandle != null) {
+    AlertDialog(
+      onDismissRequest = { 
+        showCompleteDialog = false
+        requestToHandle = null
+      },
+      title = { Text("Mark as Complete") },
+      text = { 
+        Text("Mark this request from ${requestToHandle?.users?.name ?: "this student"} as completed?\n\nThis indicates that you have finished providing the skill service.") 
+      },
+      confirmButton = {
+        Button(
+          onClick = {
+            val requestId = requestToHandle?.id ?: ""
+            val studentName = requestToHandle?.users?.name ?: "the student"
+            
+            showCompleteDialog = false
+            requestToHandle = null
+            
+            scope.launch {
+              val success = skillRepo.updateRequestStatus(requestId, "COMPLETED")
+              if (success) {
+                successMessage = "Request marked as completed! Great work with $studentName."
+                showSuccessDialog = true
+                
+                val currentUserId = authRepository.getCurrentUserId()
+                if(currentUserId != null) {
+                  val allRequests = skillRepo.getAllRequestsForProvider(currentUserId)
+                  incomingRequests = allRequests.filter { it.status == "PENDING" }
+                  acceptedRequests = allRequests.filter { it.status == "ACCEPTED" }
+                  completedRequests = allRequests.filter { it.status == "COMPLETED" }
+                }
+              }
+            }
+          },
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.tertiary
+          )
+        ) {
+          Text("Yes, Mark Complete")
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = { 
+            showCompleteDialog = false
+            requestToHandle = null
+          }
+        ) {
+          Text("Cancel")
+        }
+      }
+    )
+  }
+
   if (showSuccessDialog) {
     AlertDialog(
       onDismissRequest = { showSuccessDialog = false },
@@ -292,6 +335,16 @@ fun RequestManagementScreen(
     )
   }
 
+  val activeCount = incomingRequests.size + acceptedRequests.size
+  
+  LaunchedEffect(activeCount, completedRequests.size) {
+    if (activeCount == 0 && completedRequests.isNotEmpty()) {
+      selectedTabIndex = 1
+    } else if (selectedTabIndex == 1 && completedRequests.isEmpty()) {
+      selectedTabIndex = 0
+    }
+  }
+  
   Column(
     modifier = Modifier.fillMaxSize()
   ) {
@@ -315,10 +368,32 @@ fun RequestManagementScreen(
         )
       }
   }
-  else if (incomingRequests.isEmpty() && acceptedRequests.isEmpty()) {
-    // No requests at all
-    Box(
-      modifier = Modifier.fillMaxSize(),
+  else if (incomingRequests.isEmpty() && acceptedRequests.isEmpty() && completedRequests.isEmpty()) {
+    Column(
+      modifier = Modifier.fillMaxSize()
+    ) {
+      // Header with back button
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(16.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        IconButton(onClick = onBackClick) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+        }
+        Text(
+          text = "Manage Requests",
+          style = MaterialTheme.typography.headlineMedium,
+          fontWeight = FontWeight.Bold
+        )
+      }
+      
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(16.dp),
       contentAlignment = Alignment.Center
     ) {
       Text(
@@ -326,85 +401,187 @@ fun RequestManagementScreen(
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
+      }
     }
   }
   else {
-    // Show both sections in a scrollable column
-    LazyColumn(
-      modifier = Modifier.fillMaxSize(),
-      contentPadding = PaddingValues(16.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp)
+    val activeCount = incomingRequests.size + acceptedRequests.size
+    
+    Column(
+      modifier = Modifier.fillMaxSize()
     ) {
-      item {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.Start,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          IconButton(onClick = onBackClick) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-          }
-          Text(
-            text = "Manage Requests",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 16.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        IconButton(onClick = onBackClick) {
+          Icon(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Back",
+            tint = MaterialTheme.colorScheme.primary
           )
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+          text = "Manage Requests",
+          style = MaterialTheme.typography.headlineMedium,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.primary
+        )
       }
       
-      // Section 1: Incoming Requests (Pending)
-      if (incomingRequests.isNotEmpty()) {
-        item {
-          Text(
-            text = "Incoming Requests",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(vertical = 8.dp)
-          )
-        }
-        
-        items(incomingRequests) { requestWithDetails ->
-          RequestCard(
-            requestWithDetails = requestWithDetails,
-            onAccept = { requestId ->
-              requestToHandle = requestWithDetails
-              showAcceptDialog = true
-            },
-            onReject = { requestId ->
-              requestToHandle = requestWithDetails
-              showRejectDialog = true
+      val tabTitles = listOf(
+        "Active ($activeCount)",
+        "Completed (${completedRequests.size})"
+      )
+      
+      TabRow(
+        selectedTabIndex = selectedTabIndex,
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 16.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.primary
+      ) {
+        tabTitles.forEachIndexed { index, title ->
+          Tab(
+            selected = selectedTabIndex == index,
+            onClick = { selectedTabIndex = index },
+            text = {
+              Text(
+                text = title,
+                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium
+              )
             }
           )
         }
-        
-        // Spacer between sections
-        item {
-          Spacer(modifier = Modifier.height(16.dp))
-        }
       }
       
-      // Section 2: Accepted Requests (Active)
-      if (acceptedRequests.isNotEmpty()) {
-        item {
-          Text(
-            text = "Accepted Requests",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(vertical = 8.dp)
-          )
-          Text(
-            text = "Coordinate with these students",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp)
-          )
+      Spacer(modifier = Modifier.height(8.dp))
+      
+      when (selectedTabIndex) {
+        0 -> {
+          if (activeCount == 0) {
+            Box(
+              modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(16.dp),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(
+                text = "No active requests yet",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
+          } else {
+            LazyColumn(
+              modifier = Modifier.weight(1f),
+              contentPadding = PaddingValues(16.dp),
+              verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              if (incomingRequests.isNotEmpty()) {
+                item {
+                  Text(
+                    text = "Incoming Requests",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                  )
+                }
+                
+                items(incomingRequests) { requestWithDetails ->
+                  RequestCard(
+                    requestWithDetails = requestWithDetails,
+                    onAccept = {
+                      requestToHandle = requestWithDetails
+                      showAcceptDialog = true
+                    },
+                    onReject = {
+                      requestToHandle = requestWithDetails
+                      showRejectDialog = true
+                    }
+                  )
+                }
+                
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+              }
+              
+              if (acceptedRequests.isNotEmpty()) {
+                item {
+                  Text(
+                    text = "Accepted Requests",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                  )
+                  Text(
+                    text = "Coordinate with these students",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                  )
+                }
+                
+                items(acceptedRequests) { requestWithDetails ->
+                  AcceptedRequestCard(
+                    requestWithDetails = requestWithDetails,
+                    onMarkComplete = {
+                      requestToHandle = requestWithDetails
+                      showCompleteDialog = true
+                    }
+                  )
+                }
+              }
+            }
+          }
         }
-        
-        items(acceptedRequests) { requestWithDetails ->
-          AcceptedRequestCard(
-            requestWithDetails = requestWithDetails
-          )
+        else -> {
+          if (completedRequests.isEmpty()) {
+            Box(
+              modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(16.dp),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(
+                text = "No completed requests yet",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
+          } else {
+            LazyColumn(
+              modifier = Modifier.weight(1f),
+              contentPadding = PaddingValues(16.dp),
+              verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              item {
+                Text(
+                  text = "Completed Requests",
+                  style = MaterialTheme.typography.titleLarge,
+                  fontWeight = FontWeight.Bold,
+                  modifier = Modifier.padding(vertical = 8.dp)
+                )
+                Text(
+                  text = "Past completed services",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.padding(bottom = 8.dp)
+                )
+              }
+              
+              items(completedRequests) { requestWithDetails ->
+                CompletedRequestCard(
+                  requestWithDetails = requestWithDetails
+                )
+              }
+            }
+          }
         }
       }
     }
@@ -412,17 +589,129 @@ fun RequestManagementScreen(
 }
 }
 
-// Card for accepted requests (no accept/reject buttons, shows status)
 @Composable
 fun AcceptedRequestCard(
+  requestWithDetails: RequestWithDetails,
+  onMarkComplete: (String) -> Unit
+) {
+  Card(
+    modifier = Modifier.fillMaxWidth(),
+    shape = SkillviaCardDefaults.Shape,
+    elevation = SkillviaCardDefaults.elevation(),
+    colors = SkillviaCardDefaults.colors()
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+      ) {
+        Column(
+          modifier = Modifier.weight(1f)
+        ) {
+          Text(
+            text = requestWithDetails.skills?.title ?: "Unknown Skill",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+          )
+          Text(
+            text = requestWithDetails.users?.name ?: "Unknown User",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+          )
+        }
+        Text(
+          text = "$${String.format("%.0f", requestWithDetails.price)}/hr",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+      
+      Text(
+        text = "Message:",
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+      )
+      Spacer(modifier = Modifier.height(4.dp))
+      Text(
+        text = requestWithDetails.message,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onPrimaryContainer
+      )
+      
+      Spacer(modifier = Modifier.height(12.dp))
+      
+      // Status badge
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(
+          Icons.Default.Check,
+          contentDescription = "Accepted",
+          modifier = Modifier.size(16.dp),
+          tint = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+          text = "ACCEPTED",
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        }
+      }
+      
+      Spacer(modifier = Modifier.height(16.dp))
+      
+      Button(
+        onClick = { onMarkComplete(requestWithDetails.id ?: "") },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = MaterialTheme.colorScheme.tertiary
+        )
+      ) {
+        Icon(
+          Icons.Default.Done,
+          contentDescription = "Complete",
+          modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text("Mark as Complete")
+      }
+      
+      Spacer(modifier = Modifier.height(8.dp))
+      
+      Text(
+        text = "💡 Coordinate meeting details with the student through app messaging (coming soon) or contact them directly.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+      )
+    }
+  }
+}
+
+@Composable
+fun CompletedRequestCard(
   requestWithDetails: RequestWithDetails
 ) {
   Card(
     modifier = Modifier.fillMaxWidth(),
-    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-    colors = CardDefaults.cardColors(
-      containerColor = MaterialTheme.colorScheme.primaryContainer
-    )
+    shape = SkillviaCardDefaults.Shape,
+    elevation = SkillviaCardDefaults.elevation(),
+    colors = SkillviaCardDefaults.colors()
   ) {
     Column(
       modifier = Modifier.padding(16.dp)
@@ -450,13 +739,12 @@ fun AcceptedRequestCard(
           text = "$${String.format("%.0f", requestWithDetails.price)}/hr",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.primary,
+          color = MaterialTheme.colorScheme.tertiary,
         )
       }
 
       Spacer(modifier = Modifier.height(12.dp))
       
-      // Show the original message
       Text(
         text = "Message:",
         style = MaterialTheme.typography.bodySmall,
@@ -471,34 +759,23 @@ fun AcceptedRequestCard(
       
       Spacer(modifier = Modifier.height(12.dp))
       
-      // Status badge
       Row(
         verticalAlignment = Alignment.CenterVertically
       ) {
         Icon(
-          Icons.Default.Check,
-          contentDescription = "Accepted",
+          Icons.Default.Done,
+          contentDescription = "Completed",
           modifier = Modifier.size(16.dp),
-          tint = MaterialTheme.colorScheme.primary
+          tint = MaterialTheme.colorScheme.tertiary
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-          text = "ACCEPTED",
+          text = "COMPLETED",
           style = MaterialTheme.typography.labelMedium,
           fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.primary
+          color = MaterialTheme.colorScheme.tertiary
         )
       }
-      
-      Spacer(modifier = Modifier.height(8.dp))
-      
-      // Info text
-      Text(
-        text = "💡 Coordinate meeting details with the student through app messaging (coming soon) or contact them directly.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-      )
     }
   }
 }

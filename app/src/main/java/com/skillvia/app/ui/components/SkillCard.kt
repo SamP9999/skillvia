@@ -1,15 +1,17 @@
 package com.skillvia.app.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.Skill
+import com.skillvia.app.ui.theme.SkillviaCardDefaults
 
-// Reusable SkillCard component
 @Composable
 fun SkillCard(
     skill: Skill,
@@ -18,15 +20,13 @@ fun SkillCard(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface // Explicitly white
-        )
+        shape = SkillviaCardDefaults.Shape,
+        elevation = SkillviaCardDefaults.elevation(),
+        colors = SkillviaCardDefaults.colors()
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Top row: Title and Price
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -48,7 +48,6 @@ fun SkillCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Bottom row: Provider name and Rating
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

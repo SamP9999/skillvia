@@ -8,21 +8,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = SkillviaBlue80,
-    secondary = SkillviaTeal80,
-    tertiary = SkillviaOrange80,
+    primary = SkillviaBlue,
+    secondary = SkillviaBlue,
+    tertiary = SkillviaOrange,
     background = Color(0xFF121212),
     surface = Color(0xFF1E1E1E),
     onPrimary = Color.White,
     onSecondary = Color.White,
     onTertiary = Color.White,
     onBackground = Color(0xFFE6E1E5),
-    onSurface = Color(0xFFE6E1E5)
+    onSurface = Color(0xFFE6E1E5),
+    primaryContainer = SkillviaBlueDark,
+    onPrimaryContainer = Color.White,
+    secondaryContainer = SkillviaBlueDark,
+    onSecondaryContainer = Color.White,
+    surfaceVariant = Color(0xFF2A2A2A),
+    onSurfaceVariant = Color(0xFFE0E0E0)
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = SkillviaBlue,
-    secondary = SkillviaTeal,
+    secondary = SkillviaBlue,
     tertiary = SkillviaOrange,
     background = SkillviaBackground,
     surface = SkillviaSurface,
@@ -34,22 +40,20 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = SkillviaOnSurfaceVariant,
     primaryContainer = SkillviaBlueLight,
     onPrimaryContainer = SkillviaBlueDark,
-    secondaryContainer = SkillviaTealLight,
-    onSecondaryContainer = SkillviaTealDark,
+    secondaryContainer = SkillviaBlueLight,
+    onSecondaryContainer = SkillviaBlueDark,
     tertiaryContainer = SkillviaOrangeLight,
-    onTertiaryContainer = SkillviaOrangeDark
+    onTertiaryContainer = SkillviaOrangeDark,
+    surfaceVariant = SkillviaCardBackground
 )
 
 @Composable
 fun SkillviaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color disabled to maintain consistent brand identity
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        // Dynamic color disabled - using custom Skillvia brand colors
-        // This ensures consistent branding regardless of system wallpaper
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

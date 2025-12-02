@@ -5,10 +5,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skillvia.app.data.model.Skill
@@ -17,6 +20,17 @@ import com.skillvia.app.data.repository.AuthRepository
 import com.skillvia.app.data.repository.SkillRepo
 import kotlinx.coroutines.launch
 import java.util.Date
+import androidx.compose.foundation.selection.selectable  
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Context
+import android.content.Intent
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode 
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,12 +40,34 @@ fun AddSkillScreen(
 ) {
   val skillRepo = SkillRepo()
   val authRepository = AuthRepository()
-//form fields
+  val context = LocalContext.current
+  
+  LaunchedEffect(Unit) {
+    if (!Places.isInitialized()) {
+      Places.initialize(context, "AIzaSyD8geDxm1ACba5CkrLHyRJYZKmCskTRrrI")
+    }
+  }
+  
   var title by remember { mutableStateOf("") }
   var description by remember { mutableStateOf("")}
   var price by remember { mutableStateOf("")}
   var location by remember { mutableStateOf("")}
+  var latitude by remember { mutableStateOf<Double?>(null) }
+  var longitude by remember { mutableStateOf<Double?>(null) }
   var selectedCategory by remember { mutableStateOf(SkillCategory.ACADEMIC)}
+  var deliveryType by remember { mutableStateOf("BOTH") }
+  
+  val placesLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.StartActivityForResult()
+  ) { result ->
+    if (result.resultCode == android.app.Activity.RESULT_OK) {
+      val place = Autocomplete.getPlaceFromIntent(result.data ?: return@rememberLauncherForActivityResult)
+      location = place.name ?: place.address ?: ""
+      latitude = place.latLng?.latitude
+      longitude = place.latLng?.longitude
+      
+    }
+  }
 
   var isLoading by remember { mutableStateOf(false)}
   var errorMessage by remember { mutableStateOf("")}
@@ -54,12 +90,17 @@ fun AddSkillScreen(
         verticalAlignment = Alignment.CenterVertically
       ) {
         IconButton(onClick = onBackClick) {
-          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+          Icon(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Back",
+            tint = MaterialTheme.colorScheme.primary
+          )
         }
         Text(
           text = "Add New Skill",
           style = MaterialTheme.typography.headlineMedium,
-          fontWeight = FontWeight.Bold
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.primary
         )
       }
       
@@ -82,7 +123,6 @@ fun AddSkillScreen(
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold
       )  
-      //Dropdown for categories
       var expanded by remember { mutableStateOf(false)}
       ExposedDropdownMenuBox(
         expanded = expanded,
@@ -113,7 +153,6 @@ fun AddSkillScreen(
           }
         }
     }
-    //price
     Text(
       text = "Price per Hour ($)",
       style = MaterialTheme.typography.titleMedium,
@@ -127,20 +166,114 @@ fun AddSkillScreen(
       singleLine = true,
       leadingIcon = { Text("$") },
     )
-    //location
+    Spacer(modifier = Modifier.height(16.dp))
     Text(
-      text = "Location",
+      text = "Delivery Type",
       style = MaterialTheme.typography.titleMedium,
       fontWeight = FontWeight.Bold
     )
-    OutlinedTextField(
-      value = location,
-      onValueChange = { location = it},
-      placeholder = { Text("e.g., Harriet Irving Library") },
-      modifier = Modifier.fillMaxWidth(),
-      singleLine = true,
+    Spacer(modifier = Modifier.height(8.dp))
+    Column(
+      modifier = Modifier
+      .fillMaxWidth()
+      .selectableGroup()
+    ) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    RadioButton(
+      selected = deliveryType == "ONLINE",
+      onClick = { deliveryType = "ONLINE" }
     )
-    //description
+    Spacer(modifier = Modifier.width(8.dp))
+    Text(
+      text = "Online Only",
+      style = MaterialTheme.typography.bodyLarge
+    )
+  }
+  
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    RadioButton(
+      selected = deliveryType == "IN_PERSON",
+      onClick = { deliveryType = "IN_PERSON" }
+    )
+    Spacer(modifier = Modifier.width(8.dp))
+    Text(
+      text = "In-Person Only",
+      style = MaterialTheme.typography.bodyLarge
+    )
+  }
+  
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    RadioButton(
+      selected = deliveryType == "BOTH",
+      onClick = { deliveryType = "BOTH" }
+    )
+    Spacer(modifier = Modifier.width(8.dp))
+    Text(
+      text = "Both Available",
+      style = MaterialTheme.typography.bodyLarge
+    )
+  }
+}
+    if (deliveryType != "ONLINE") {
+      Text(
+        text = "Location",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold
+      )
+      Spacer(modifier = Modifier.height(8.dp))
+      
+      OutlinedTextField(
+        value = location.ifEmpty { "Tap to select location" },
+        onValueChange = { }, // Read-only - user must use Places Autocomplete
+        readOnly = true,
+        placeholder = { Text("Tap to select a location") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = "Location") },
+        trailingIcon = {
+          if (location.isNotEmpty()) {
+            IconButton(onClick = { 
+              location = ""
+              latitude = null
+              longitude = null
+            }) {
+              Icon(Icons.Default.Close, contentDescription = "Clear")
+            }
+          }
+        }
+      )
+      
+      Spacer(modifier = Modifier.height(8.dp))
+      
+      Button(
+        onClick = {
+          val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
+          val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+            .build(context)
+          placesLauncher.launch(intent)
+        },
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Icon(Icons.Default.LocationOn, contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(if (location.isEmpty()) "Select Location" else "Change Location")
+      }
+    }
     Text(
       text = "Description",
       style = MaterialTheme.typography.titleMedium,
@@ -157,7 +290,6 @@ fun AddSkillScreen(
       minLines = 3,
     )
    
-    //error message
     if (errorMessage.isNotEmpty()) {
       Text(
         text = errorMessage,
@@ -166,7 +298,6 @@ fun AddSkillScreen(
       )
     }
 
-    //submit button
     Button(
       onClick = {
         if(title.isBlank()){
@@ -181,19 +312,17 @@ fun AddSkillScreen(
           errorMessage = "Please enter a price"
           return@Button
         }
-        if(location.isBlank()){
+        if(deliveryType != "ONLINE" && location.isBlank()){
           errorMessage = "Please enter a location"
           return@Button
         }
 
-        // Make sure price is a valid number
         val priceValue = try {
           price.toDouble()
         } catch (e: NumberFormatException) {
           errorMessage = "Please enter a valid price"
           return@Button
         }
-        //adding skill to supabase
         scope.launch {
           isLoading = true
           errorMessage = ""
@@ -203,24 +332,34 @@ fun AddSkillScreen(
             if(userId == null){
               errorMessage = "You must be logged in to add a skill"
               isLoading = false
-              return@launch //stop execution if user not logged in
+              return@launch
             }
-            //skill object 
             val newSkill = Skill(
               title = title.trim(),
               description = description.trim(),
               category = selectedCategory.name, // Convert enum to string
               price = priceValue,
               providerID  = userId,
-              location = location.trim(),
+              location = if (deliveryType == "ONLINE") "Online" else location.trim(),
+              latitude = if (deliveryType == "ONLINE") null else latitude?.toFloat(),
+              longitude = if (deliveryType == "ONLINE") null else longitude?.toFloat(),
+              deliveryType = deliveryType,  
               rating = 0.0f,
               totalRatings = 0,
               isActive = true,
               createdAt = Date().toString()
             )
-            //save to supabase
+            
             val result = skillRepo.addSkill(newSkill)
             if(result.isSuccess){
+              title = ""
+              description = ""
+              price = ""
+              location = ""
+              latitude = null
+              longitude = null
+              selectedCategory = SkillCategory.ACADEMIC
+              deliveryType = "BOTH"
               showSuccessDialog = true
             } else {
               errorMessage = result.exceptionOrNull()?.message ?: "Failed to add skill"

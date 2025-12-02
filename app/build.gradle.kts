@@ -56,6 +56,9 @@ dependencies {
     // Location Services
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-maps:19.2.0")
+    implementation("com.google.android.libraries.places:places:3.4.0")
+    implementation("com.google.maps.android:maps-compose:5.0.0")
+    implementation("com.google.maps.android:maps-compose-utils:5.0.0")
 
     // Supabase - using compatible versions with Kotlin 2.0
     implementation("io.github.jan-tennert.supabase:postgrest-kt:2.6.1")
